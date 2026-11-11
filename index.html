@@ -1,22 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<!-- Favicon e Íconos -->
-  <link rel="icon" type="image/x-icon" href="./favicon.ico">
-  <link rel="shortcut icon" href="./favicon.ico">
-  
-  <!-- Configuración PWA (Asegúrate de que ya estén estas líneas) -->
-  <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#2563eb">
-  <link rel="apple-touch-icon" href="./favicon.ico">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>App de Ventas Escolares</title>
+  <title>CantinApp - Ventas Escolares</title>
   
   <!-- Configuración PWA -->
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#2563eb">
-  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3144/3144456.png">
+  <link rel="icon" type="image/x-icon" href="./favicon.ico">
+  <link rel="shortcut icon" href="./favicon.ico">
+  <link rel="apple-touch-icon" href="./favicon.ico">
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -27,15 +21,13 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <!-- Babel para JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
 
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('PWA lista y registrada', reg.scope))
-          .catch(err => console.log('Error al registrar PWA', err));
+          .then(reg => console.log('PWA registrada con éxito:', reg))
+          .catch(err => console.log('Error al registrar PWA:', err));
       });
     }
   </script>
@@ -91,6 +83,7 @@
       
       const [closingDate, setClosingDate] = useState(() => new Date().toISOString().split('T')[0]);
       const [closingRegister, setClosingRegister] = useState('Todas');
+      const [closingViewMode, setClosingViewMode] = useState('daily');
 
       const [editingProduct, setEditingProduct] = useState(null);
       const [productForm, setProductForm] = useState({ name: '', price: '', category: 'Comida', image: '' });
@@ -204,6 +197,36 @@
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
       };
 
+      const handleStartNewJornada = () => {
+        if (confirm('¿Deseas iniciar una nueva jornada? Esto mantendrá todo el historial guardado por fechas y dejará el mostrador listo para nuevos pedidos.')) {
+          setCart([]);
+          setClosingDate(new Date().toISOString().split('T')[0]);
+          alert('¡Nueva jornada iniciada correctamente!');
+        }
+      };
+
+      const exportToCSV = () => {
+        if (orders.length === 0) {
+          alert('No hay ventas registradas para exportar.');
+          return;
+        }
+
+        let csvContent = 'data:text/csv;charset=utf-8,ID Orden,Fecha,Hora,Caja,Metodo Pago,Estado,Total,Productos\n';
+
+        orders.forEach(o => {
+          const itemsStr = o.items.map(i => `${i.qty}x ${i.name}`).join('; ');
+          csvContent += `"${o.id}","${o.date}","${o.timestamp}","${o.register}","${o.paymentMethod}","${o.status}","${o.total}","${itemsStr}"\n`;
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', `Ventas_CantinApp_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
+
       const filteredProducts = products.filter(p => {
         const matchesCat = selectedCategory === 'Todas' || p.category === selectedCategory;
         const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -239,13 +262,23 @@
         });
       });
 
+      const historyByDateMap = {};
+      orders.filter(o => o.status !== 'Cancelado').forEach(o => {
+        if (!historyByDateMap[o.date]) {
+          historyByDateMap[o.date] = { date: o.date, total: 0, ordersCount: 0 };
+        }
+        historyByDateMap[o.date].total += o.total;
+        historyByDateMap[o.date].ordersCount += 1;
+      });
+      const historyList = Object.values(historyByDateMap).sort((a, b) => b.date.localeCompare(a.date));
+
       return (
         <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col shadow-lg">
           {/* Encabezado */}
           <header className="bg-blue-600 text-white p-4 sticky top-0 z-30 shadow-md">
             <div className="flex justify-between items-center mb-2">
               <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
-                🎓 Ventas Escolares
+                🎓 CantinApp
               </h1>
               <select 
                 value={activeRegister} 
@@ -422,94 +455,168 @@
               </div>
             )}
 
-            {/* PESTAÑA CIERRE DE CAJA */}
+            {/* PESTAÑA CIERRE DE CAJA E HISTORIAL */}
             {activeTab === 'closing' && (
               <div>
-                <div id="printable-area">
-                  <div className="bg-white border rounded-xl p-4 shadow-sm mb-4">
-                    <h2 className="font-bold text-base text-gray-800 mb-3 border-b pb-2">📊 Cierre de Caja</h2>
-                    
-                    <div className="grid grid-cols-2 gap-2 mb-4 no-print">
-                      <div>
-                        <label className="text-xs text-gray-600 block mb-1">Fecha:</label>
-                        <input 
-                          type="date" 
-                          value={closingDate}
-                          onChange={(e) => setClosingDate(e.target.value)}
-                          className="w-full text-xs border rounded p-1.5"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-600 block mb-1">Filtrar Caja:</label>
-                        <select 
-                          value={closingRegister} 
-                          onChange={(e) => setClosingRegister(e.target.value)}
-                          className="w-full text-xs border rounded p-1.5"
-                        >
-                          <option value="Todas">Todas</option>
-                          <option value="Caja 1">Caja 1</option>
-                          <option value="Caja 2">Caja 2</option>
-                          <option value="Caja 3">Caja 3</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center mb-4">
-                      <span className="text-xs text-blue-700 uppercase font-semibold">Total Recaudado</span>
-                      <div className="text-2xl font-bold text-blue-700">₲ {totalClosingSales.toLocaleString()}</div>
-                      <span className="text-xs text-gray-500">{closingOrders.length} pedidos procesados</span>
-                    </div>
-
-                    <h3 className="font-bold text-xs text-gray-700 mb-2">Desglose por Medio de Pago:</h3>
-                    <div className="grid grid-cols-3 gap-2 mb-4 text-xs">
-                      <div className="bg-gray-50 p-2 rounded text-center">
-                        <span className="text-gray-500 block">Efectivo</span>
-                        <span className="font-bold">₲ {(salesByPayment['Efectivo'] || 0).toLocaleString()}</span>
-                      </div>
-                      <div className="bg-gray-50 p-2 rounded text-center">
-                        <span className="text-gray-500 block">Transf.</span>
-                        <span className="font-bold">₲ {(salesByPayment['Transferencia'] || 0).toLocaleString()}</span>
-                      </div>
-                      <div className="bg-gray-50 p-2 rounded text-center">
-                        <span className="text-gray-500 block">Tarjeta</span>
-                        <span className="font-bold">₲ {(salesByPayment['Tarjeta'] || 0).toLocaleString()}</span>
-                      </div>
-                    </div>
-
-                    <h3 className="font-bold text-xs text-gray-700 mb-2">Productos Vendidos:</h3>
-                    <div className="border rounded-lg overflow-hidden text-xs">
-                      <table className="w-full text-left border-collapse">
-                        <thead className="bg-gray-100 text-gray-600 border-b">
-                          <tr>
-                            <th className="p-2">Prod.</th>
-                            <th className="p-2 text-center">Cant.</th>
-                            <th className="p-2 text-right">Subtotal</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                          {Object.keys(productSalesMap).length === 0 ? (
-                            <tr><td colSpan="3" className="p-3 text-center text-gray-400">Sin ventas registradas</td></tr>
-                          ) : (
-                            Object.entries(productSalesMap).map(([name, data]) => (
-                              <tr key={name}>
-                                <td className="p-2 font-medium">{name}</td>
-                                <td className="p-2 text-center">{data.qty}</td>
-                                <td className="p-2 text-right font-semibold">₲ {data.subtotal.toLocaleString()}</td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                <div className="flex gap-2 mb-4 bg-gray-200 p-1 rounded-lg text-xs font-bold no-print">
+                  <button 
+                    onClick={() => setClosingViewMode('daily')}
+                    className={`flex-1 py-1.5 rounded-md text-center transition ${closingViewMode === 'daily' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}
+                  >
+                    Cierre del Día
+                  </button>
+                  <button 
+                    onClick={() => setClosingViewMode('history')}
+                    className={`flex-1 py-1.5 rounded-md text-center transition ${closingViewMode === 'history' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}
+                  >
+                    Historial & Comparativos
+                  </button>
                 </div>
 
-                <button 
-                  onClick={() => window.print()}
-                  className="w-full bg-gray-800 text-white py-2.5 rounded-xl font-bold text-sm shadow hover:bg-gray-900 transition"
-                >
-                  🖨️ Imprimir Reporte de Cierre
-                </button>
+                {closingViewMode === 'daily' ? (
+                  <div>
+                    <div id="printable-area">
+                      <div className="bg-white border rounded-xl p-4 shadow-sm mb-4">
+                        <div className="flex justify-between items-center mb-3 border-b pb-2">
+                          <h2 className="font-bold text-base text-gray-800">📊 Cierre de Caja</h2>
+                          <button 
+                            onClick={handleStartNewJornada}
+                            className="bg-emerald-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg no-print hover:bg-emerald-700 transition"
+                          >
+                            ☀️ Iniciar Nueva Jornada
+                          </button>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2 mb-4 no-print">
+                          <div>
+                            <label className="text-xs text-gray-600 block mb-1">Fecha:</label>
+                            <input 
+                              type="date" 
+                              value={closingDate}
+                              onChange={(e) => setClosingDate(e.target.value)}
+                              className="w-full text-xs border rounded p-1.5"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-gray-600 block mb-1">Filtrar Caja:</label>
+                            <select 
+                              value={closingRegister} 
+                              onChange={(e) => setClosingRegister(e.target.value)}
+                              className="w-full text-xs border rounded p-1.5"
+                            >
+                              <option value="Todas">Todas</option>
+                              <option value="Caja 1">Caja 1</option>
+                              <option value="Caja 2">Caja 2</option>
+                              <option value="Caja 3">Caja 3</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center mb-4">
+                          <span className="text-xs text-blue-700 uppercase font-semibold">Total Recaudado</span>
+                          <div className="text-2xl font-bold text-blue-700">₲ {totalClosingSales.toLocaleString()}</div>
+                          <span className="text-xs text-gray-500">{closingOrders.length} pedidos procesados</span>
+                        </div>
+
+                        <h3 className="font-bold text-xs text-gray-700 mb-2">Desglose por Medio de Pago:</h3>
+                        <div className="grid grid-cols-3 gap-2 mb-4 text-xs">
+                          <div className="bg-gray-50 p-2 rounded text-center">
+                            <span className="text-gray-500 block">Efectivo</span>
+                            <span className="font-bold">₲ {(salesByPayment['Efectivo'] || 0).toLocaleString()}</span>
+                          </div>
+                          <div className="bg-gray-50 p-2 rounded text-center">
+                            <span className="text-gray-500 block">Transf.</span>
+                            <span className="font-bold">₲ {(salesByPayment['Transferencia'] || 0).toLocaleString()}</span>
+                          </div>
+                          <div className="bg-gray-50 p-2 rounded text-center">
+                            <span className="text-gray-500 block">Tarjeta</span>
+                            <span className="font-bold">₲ {(salesByPayment['Tarjeta'] || 0).toLocaleString()}</span>
+                          </div>
+                        </div>
+
+                        <h3 className="font-bold text-xs text-gray-700 mb-2">Productos Vendidos:</h3>
+                        <div className="border rounded-lg overflow-hidden text-xs">
+                          <table className="w-full text-left border-collapse">
+                            <thead className="bg-gray-100 text-gray-600 border-b">
+                              <tr>
+                                <th className="p-2">Prod.</th>
+                                <th className="p-2 text-center">Cant.</th>
+                                <th className="p-2 text-right">Subtotal</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                              {Object.keys(productSalesMap).length === 0 ? (
+                                <tr><td colSpan="3" className="p-3 text-center text-gray-400">Sin ventas registradas</td></tr>
+                              ) : (
+                                Object.entries(productSalesMap).map(([name, data]) => (
+                                  <tr key={name}>
+                                    <td className="p-2 font-medium">{name}</td>
+                                    <td className="p-2 text-center">{data.qty}</td>
+                                    <td className="p-2 text-right font-semibold">₲ {data.subtotal.toLocaleString()}</td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => window.print()}
+                        className="flex-1 bg-gray-800 text-white py-2.5 rounded-xl font-bold text-xs shadow hover:bg-gray-900 transition"
+                      >
+                        🖨️ Imprimir Reporte
+                      </button>
+                      <button 
+                        onClick={exportToCSV}
+                        className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-bold text-xs shadow hover:bg-blue-700 transition"
+                      >
+                        📥 Exportar Excel/CSV
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="bg-white border rounded-xl p-4 shadow-sm mb-4">
+                      <div className="flex justify-between items-center mb-3 border-b pb-2">
+                        <h2 className="font-bold text-base text-gray-800">📈 Comparativo por Fechas</h2>
+                        <button 
+                          onClick={exportToCSV}
+                          className="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg"
+                        >
+                          📥 Exportar Todo
+                        </button>
+                      </div>
+
+                      <div className="border rounded-lg overflow-hidden text-xs">
+                        <table className="w-full text-left border-collapse">
+                          <thead className="bg-gray-100 text-gray-600 border-b">
+                            <tr>
+                              <th className="p-2">Fecha</th>
+                              <th className="p-2 text-center">Ped.</th>
+                              <th className="p-2 text-right">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y">
+                            {historyList.length === 0 ? (
+                              <tr><td colSpan="3" className="p-3 text-center text-gray-400">No hay historial registrado</td></tr>
+                            ) : (
+                              historyList.map(h => (
+                                <tr key={h.date} className="hover:bg-gray-50">
+                                  <td className="p-2 font-medium">{h.date}</td>
+                                  <td className="p-2 text-center">{h.ordersCount}</td>
+                                  <td className="p-2 text-right font-bold text-blue-600">₲ {h.total.toLocaleString()}</td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -622,7 +729,7 @@
                     </div>
                   ))}
                   <div className="flex justify-between font-bold pt-1 border-t text-blue-600 text-sm">
-                    <span>Total Paid:</span>
+                    <span>Total Pagado:</span>
                     <span>₲ {activeOrder.total.toLocaleString()}</span>
                   </div>
                 </div>
@@ -642,14 +749,5 @@
 
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('Service Worker registrado con éxito:', reg.scope))
-        .catch(err => console.log('Error al registrar el Service Worker:', err));
-    });
-  }
-</script>
 </body>
 </html>
