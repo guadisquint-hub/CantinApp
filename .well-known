@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.guadisquint_hub.twa",
+        "sha256_cert_fingerprints": ["B9:7B:9B:0B:1F:0C:A0:7E:30:36:96:44:7B:5C:52:E8:C6:F7:48:D4:17:55:15:4E:7A:BF:B8:1D:B1:A0:14:86"]
+      }
+    }]
