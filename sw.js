@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cantinapp-cache-v1';
+const CACHE_NAME = 'cantinapp-v2'; 
 const urlsToCache = [
   './',
   './index.html',
