@@ -30,12 +30,12 @@
   <!-- Babel para JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
- <script>
+<script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/CantinApp/sw.js')
-        .then(reg => console.log('Service Worker registrado con éxito'))
-        .catch(err => console.log('Error al registrar el Service Worker', err));
+        .then(reg => console.log('Service Worker registrado con éxito:', reg.scope))
+        .catch(err => console.log('Error al registrar el Service Worker:', err));
     });
   }
 </script>
