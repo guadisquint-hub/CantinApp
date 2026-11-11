@@ -1,0 +1,19 @@
+{
+  "name": "App de Ventas Escolares - CantinApp",
+  "short_name": "CantinApp",
+  "description": "Aplicación web para gestión de ventas y control de caja en cantinas escolares.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3144/3144456.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
