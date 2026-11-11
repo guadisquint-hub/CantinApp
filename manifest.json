@@ -1,43 +1,16 @@
 {
-  "name": "App de Ventas Escolares - CantinApp",
+  "name": "CantinApp",
   "short_name": "CantinApp",
-  "description": "Aplicación web para gestión de ventas y control de caja en cantinas escolares.",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/CantinApp/index.html",
+  "scope": "/CantinApp/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#2563eb",
-  "orientation": "portrait",
+  "theme_color": "#000000",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3144/3144456.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ]
-}
-"icons": [
-  {
-    "src": "./icono.png",
-    "sizes": "192x192",
-    "type": "image/png"
-  }
-]
-{
-  "short_name": "CantinApp",
-  "name": "CantinApp - Ventas Escolares",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#2563eb",
-  "theme_color": "#2563eb",
-  "orientation": "portrait",
-  "icons": [
-    {
-      "src": "./favicon.ico",
-      "type": "image/png",
-      "sizes": "512x512",
-      "purpose": "any maskable"
+      "src": "/CantinApp/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
     }
   ]
 }
