@@ -27,12 +27,11 @@
   <!-- Babel para JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Firebase SDK (Compat para funcionar directo en navegador sin compilador) -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
   <script>
-    // Inicializar Firebase con tu proyecto cantinapp-958f3
     const firebaseConfig = {
       apiKey: "AIzaSyBe1LV62CNToESYwudcQkrvMWVlMNa4R84",
       authDomain: "cantinapp-958f3.firebaseapp.com",
@@ -46,7 +45,6 @@
       firebase.initializeApp(firebaseConfig);
     }
     const db = firebase.firestore();
-    // Habilitar persistencia offline en Firestore por si se corta el Wi-Fi unos segundos
     db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
       console.log('Persistencia Firestore:', err.code);
     });
@@ -76,14 +74,14 @@
     const { useState, useEffect } = React;
 
     const INITIAL_PRODUCTS = [
-      { id: 'p1', name: 'Empanada de Carne', price: 5000, category: 'Comida', image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=300&q=80' },
-      { id: 'p2', name: 'Empanada de Queso', price: 4500, category: 'Comida', image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=300&q=80' },
-      { id: 'p3', name: 'Sándwich de Jamón y Queso', price: 8000, category: 'Comida', image: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=300&q=80' },
-      { id: 'p4', name: 'Gaseosa 500ml', price: 6000, category: 'Bebida', image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=300&q=80' },
-      { id: 'p5', name: 'Jugo Natural', price: 5000, category: 'Bebida', image: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=300&q=80' },
-      { id: 'p6', name: 'Agua Mineral 500ml', price: 3000, category: 'Bebida', image: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=300&q=80' },
-      { id: 'p7', name: 'Alfajor', price: 4000, category: 'Postre', image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?auto=format&fit=crop&w=300&q=80' },
-      { id: 'p8', name: 'Brownie', price: 5000, category: 'Postre', image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=300&q=80' }
+      { id: 'p1', name: 'Empanada de Carne', price: 5000, category: 'Comida', stock: 30, image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=300&q=80' },
+      { id: 'p2', name: 'Empanada de Queso', price: 4500, category: 'Comida', stock: 30, image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=300&q=80' },
+      { id: 'p3', name: 'Sándwich de Jamón y Queso', price: 8000, category: 'Comida', stock: 20, image: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=300&q=80' },
+      { id: 'p4', name: 'Gaseosa 500ml', price: 6000, category: 'Bebida', stock: 40, image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=300&q=80' },
+      { id: 'p5', name: 'Jugo Natural', price: 5000, category: 'Bebida', stock: 25, image: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=300&q=80' },
+      { id: 'p6', name: 'Agua Mineral 500ml', price: 3000, category: 'Bebida', stock: 40, image: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=300&q=80' },
+      { id: 'p7', name: 'Alfajor', price: 4000, category: 'Postre', stock: 35, image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?auto=format&fit=crop&w=300&q=80' },
+      { id: 'p8', name: 'Brownie', price: 5000, category: 'Postre', stock: 20, image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=300&q=80' }
     ];
 
     function renderBarChartBase64(title, labels, values, barColor = '#2563EB') {
@@ -155,11 +153,11 @@
     }
 
     function App() {
-      // Sesión de espacio compartido (Colegio + PIN)
       const [session, setSession] = useState(() => {
         const saved = localStorage.getItem('cantinapp_cloud_session');
         return saved ? JSON.parse(saved) : null;
       });
+      const [accessMode, setAccessMode] = useState('staff'); // 'staff' (Equipo/Caja con PIN) | 'viewer' (Solo ver menú)
       const [loginSchool, setLoginSchool] = useState('');
       const [loginPin, setLoginPin] = useState('');
       const [loginError, setLoginError] = useState('');
@@ -188,13 +186,16 @@
       const [isExporting, setIsExporting] = useState(false);
 
       const [editingProduct, setEditingProduct] = useState(null);
-      const [productForm, setProductForm] = useState({ name: '', price: '', category: 'Comida', image: '' });
+      const [productForm, setProductForm] = useState({ name: '', price: '', category: 'Comida', stock: '', image: '' });
+      const [stockModalProd, setStockModalProd] = useState(null);
+      const [stockToAdd, setStockToAdd] = useState('');
+
+      const isStaff = session?.role === 'staff';
 
       useEffect(() => {
         localStorage.setItem('app_register', activeRegister);
       }, [activeRegister]);
 
-      // Conectar listeners en tiempo real de Firebase al iniciar sesión
       useEffect(() => {
         if (!session) return;
 
@@ -202,19 +203,27 @@
         setSyncError('');
         const spaceRef = db.collection('espacios').doc(session.spaceId);
 
-        // 1. Escuchar catálogo de productos en tiempo real
         const unsubProducts = spaceRef.collection('productos').onSnapshot(
           async (snapshot) => {
-            if (snapshot.empty) {
-              // Cargar catálogo inicial si el espacio es nuevo
+            if (snapshot.empty && session.role === 'staff') {
               const localProds = JSON.parse(localStorage.getItem('app_products') || 'null') || INITIAL_PRODUCTS;
               const batch = db.batch();
               localProds.forEach(p => {
-                batch.set(spaceRef.collection('productos').doc(p.id), p);
+                batch.set(spaceRef.collection('productos').doc(p.id), {
+                  ...p,
+                  stock: typeof p.stock === 'number' ? p.stock : 20
+                });
               });
               await batch.commit();
             } else {
-              const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+              const list = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                  id: doc.id,
+                  ...data,
+                  stock: typeof data.stock === 'number' ? data.stock : 0
+                };
+              });
               setProducts(list);
             }
             setIsSyncing(false);
@@ -226,18 +235,20 @@
           }
         );
 
-        // 2. Escuchar pedidos/ventas en tiempo real
-        const unsubOrders = spaceRef.collection('pedidos')
-          .orderBy('createdAt', 'desc')
-          .onSnapshot(
-            (snapshot) => {
-              const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-              setOrders(list);
-            },
-            (err) => {
-              console.error('Error sincronizando pedidos:', err);
-            }
-          );
+        let unsubOrders = () => {};
+        if (session.role === 'staff') {
+          unsubOrders = spaceRef.collection('pedidos')
+            .orderBy('createdAt', 'desc')
+            .onSnapshot(
+              (snapshot) => {
+                const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setOrders(list);
+              },
+              (err) => {
+                console.error('Error sincronizando pedidos:', err);
+              }
+            );
+        }
 
         return () => {
           unsubProducts();
@@ -259,14 +270,18 @@
         }
       }, [activeOrder]);
 
-      // Iniciar o crear espacio compartido por Colegio + PIN
       const handleJoinSpace = async (e) => {
         e.preventDefault();
         const cleanSchool = loginSchool.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
         const cleanPin = loginPin.trim();
 
-        if (!cleanSchool || cleanPin.length < 4) {
-          setLoginError('Ingresa un código de colegio y un PIN de al menos 4 dígitos.');
+        if (!cleanSchool) {
+          setLoginError('Ingresa el código del colegio.');
+          return;
+        }
+
+        if (accessMode === 'staff' && cleanPin.length < 4) {
+          setLoginError('El PIN del equipo debe tener al menos 4 dígitos.');
           return;
         }
 
@@ -277,15 +292,32 @@
           const spaceRef = db.collection('espacios').doc(cleanSchool);
           const docSnap = await spaceRef.get();
 
+          if (accessMode === 'viewer') {
+            if (!docSnap.exists) {
+              setLoginError('Ese código de colegio aún no existe. Pide al encargado que lo cree primero.');
+              setIsLoggingIn(false);
+              return;
+            }
+            const newSession = {
+              spaceId: cleanSchool,
+              schoolName: docSnap.data().schoolName || loginSchool.trim(),
+              role: 'viewer'
+            };
+            localStorage.setItem('cantinapp_cloud_session', JSON.stringify(newSession));
+            setSession(newSession);
+            setActiveTab('menu');
+            return;
+          }
+
+          // Modo Equipo / Caja (requiere PIN)
           if (docSnap.exists) {
             const data = docSnap.data();
             if (data.pin !== cleanPin) {
-              setLoginError('PIN incorrecto para este colegio.');
+              setLoginError('PIN incorrecto. Si eres alumno, elige la pestaña "Solo ver Menú".');
               setIsLoggingIn(false);
               return;
             }
           } else {
-            // Crear nuevo espacio para el colegio con su PIN
             await spaceRef.set({
               schoolName: loginSchool.trim(),
               pin: cleanPin,
@@ -293,33 +325,35 @@
             });
           }
 
-          const newSession = { spaceId: cleanSchool, schoolName: loginSchool.trim() };
+          const newSession = {
+            spaceId: cleanSchool,
+            schoolName: docSnap.exists ? (docSnap.data().schoolName || loginSchool.trim()) : loginSchool.trim(),
+            role: 'staff'
+          };
           localStorage.setItem('cantinapp_cloud_session', JSON.stringify(newSession));
           setSession(newSession);
         } catch (err) {
           console.error(err);
-          setLoginError('Error de conexión con Firebase. Revisa tu internet o las reglas de Firestore.');
+          setLoginError('Error de conexión con Firebase. Revisa tu internet.');
         } finally {
           setIsLoggingIn(false);
         }
       };
 
       const handleLogout = () => {
-        if (confirm('¿Deseas salir de este colegio para ingresar a otro?')) {
+        if (confirm('¿Deseas salir de la sesión actual?')) {
           localStorage.removeItem('cantinapp_cloud_session');
           setSession(null);
           setProducts([]);
           setOrders([]);
+          setCart([]);
         }
       };
 
-      // Subir ventas locales antiguas si existían antes de Firebase
       const handleMigrateLocalOrders = async () => {
+        if (!isStaff) return;
         const localOrders = JSON.parse(localStorage.getItem('app_orders') || '[]');
-        if (localOrders.length === 0) {
-          alert('No hay ventas locales antiguas pendientes de subir.');
-          return;
-        }
+        if (localOrders.length === 0) return;
         if (!confirm(`Se encontraron ${localOrders.length} ventas guardadas en este teléfono. ¿Deseas subirlas a la nube ahora?`)) return;
 
         try {
@@ -342,8 +376,24 @@
       const categories = ['Todas', ...new Set(products.map(p => p.category))];
 
       const addToCart = (product) => {
+        if (!isStaff) return;
+        const liveProd = products.find(p => p.id === product.id) || product;
+        const availableStock = liveProd.stock ?? 0;
+
+        if (availableStock <= 0) {
+          alert(`¡${product.name} está agotado!`);
+          return;
+        }
+
         setCart(prev => {
           const existing = prev.find(item => item.id === product.id);
+          const currentQty = existing ? existing.qty : 0;
+
+          if (currentQty + 1 > availableStock) {
+            alert(`Solo quedan ${availableStock} unidades disponibles de ${product.name}.`);
+            return prev;
+          }
+
           if (existing) {
             return prev.map(item => item.id === product.id ? { ...item, qty: item.qty + 1 } : item);
           }
@@ -352,9 +402,17 @@
       };
 
       const updateQty = (id, delta) => {
+        if (!isStaff) return;
+        const liveProd = products.find(p => p.id === id);
+        const availableStock = liveProd ? (liveProd.stock ?? 0) : 999;
+
         setCart(prev => prev.map(item => {
           if (item.id === id) {
             const newQty = item.qty + delta;
+            if (delta > 0 && newQty > availableStock) {
+              alert(`Stock máximo disponible: ${availableStock} unidades.`);
+              return item;
+            }
             return newQty > 0 ? { ...item, qty: newQty } : null;
           }
           return item;
@@ -363,51 +421,74 @@
 
       const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
-      // Guardar pedido directamente en Firebase Firestore
+      // Solo el equipo autenticado con PIN puede confirmar ventas y descontar stock
       const handleCheckout = async () => {
-        if (cart.length === 0) return;
+        if (!isStaff || cart.length === 0) return;
+
+        for (const item of cart) {
+          const liveProd = products.find(p => p.id === item.id);
+          if (liveProd && (liveProd.stock ?? 0) < item.qty) {
+            alert(`Stock insuficiente para ${item.name}. Quedan ${liveProd.stock ?? 0} unidades.`);
+            return;
+          }
+        }
+
         const orderId = 'ORD-' + Math.floor(1000 + Math.random() * 9000);
+        const itemsToProcess = [...cart];
         const newOrder = {
           id: orderId,
           date: new Date().toISOString().split('T')[0],
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           createdAt: Date.now(),
-          items: cart,
+          items: itemsToProcess,
           total: cartTotal,
           paymentMethod,
           register: activeRegister,
           status: 'Pendiente'
         };
 
-        // Mostrar voucher de inmediato y guardar en Firestore
         setActiveOrder(newOrder);
         setCart([]);
 
         try {
-          await db.collection('espacios').doc(session.spaceId)
-            .collection('pedidos').doc(orderId).set(newOrder);
+          const spaceRef = db.collection('espacios').doc(session.spaceId);
+          const batch = db.batch();
+
+          batch.set(spaceRef.collection('pedidos').doc(orderId), newOrder);
+
+          itemsToProcess.forEach(item => {
+            const prodRef = spaceRef.collection('productos').doc(item.id);
+            batch.update(prodRef, {
+              stock: firebase.firestore.FieldValue.increment(-item.qty)
+            });
+          });
+
+          await batch.commit();
         } catch (err) {
-          console.error('Error guardando pedido:', err);
-          alert('El pedido se guardó localmente y se sincronizará al recuperar señal.');
+          console.error('Error guardando pedido y actualizando stock:', err);
+          alert('El pedido se guardó localmente y el stock se actualizará al recuperar señal.');
         }
       };
 
       const handleSaveProduct = async (e) => {
         e.preventDefault();
-        if (!productForm.name || !productForm.price) return;
+        if (!isStaff || !productForm.name || !productForm.price) return;
 
         const spaceRef = db.collection('espacios').doc(session.spaceId);
         const prodId = editingProduct ? editingProduct.id : 'p_' + Date.now();
+        const parsedStock = productForm.stock === '' ? 0 : Math.max(0, Number(productForm.stock));
+
         const prodData = {
           id: prodId,
           name: productForm.name,
           price: Number(productForm.price),
           category: productForm.category,
+          stock: parsedStock,
           image: productForm.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80'
         };
 
         setEditingProduct(null);
-        setProductForm({ name: '', price: '', category: 'Comida', image: '' });
+        setProductForm({ name: '', price: '', category: 'Comida', stock: '', image: '' });
 
         try {
           await spaceRef.collection('productos').doc(prodId).set(prodData);
@@ -416,12 +497,41 @@
         }
       };
 
+      const handleConfirmAddStock = async (e) => {
+        e.preventDefault();
+        if (!isStaff) return;
+        const qtyToAdd = Number(stockToAdd);
+        if (!stockModalProd || isNaN(qtyToAdd) || qtyToAdd === 0) return;
+
+        const targetProd = stockModalProd;
+        setStockModalProd(null);
+        setStockToAdd('');
+
+        try {
+          await db.collection('espacios').doc(session.spaceId)
+            .collection('productos').doc(targetProd.id)
+            .update({
+              stock: firebase.firestore.FieldValue.increment(qtyToAdd)
+            });
+        } catch (err) {
+          alert('Error al sumar stock: ' + err.message);
+        }
+      };
+
       const startEditProduct = (prod) => {
+        if (!isStaff) return;
         setEditingProduct(prod);
-        setProductForm({ name: prod.name, price: prod.price, category: prod.category, image: prod.image });
+        setProductForm({
+          name: prod.name,
+          price: prod.price,
+          category: prod.category,
+          stock: prod.stock ?? 0,
+          image: prod.image
+        });
       };
 
       const deleteProduct = async (id) => {
+        if (!isStaff) return;
         if (confirm('¿Deseas eliminar este producto del menú en todos los dispositivos?')) {
           try {
             await db.collection('espacios').doc(session.spaceId)
@@ -432,10 +542,28 @@
         }
       };
 
-      const updateOrderStatus = async (orderId, newStatus) => {
+      const updateOrderStatus = async (order, newStatus) => {
+        if (!isStaff) return;
+        if (newStatus === 'Cancelado' && order.status !== 'Cancelado') {
+          if (!confirm(`¿Anular el pedido ${order.id}? Se devolverán las unidades al stock disponible.`)) return;
+        }
+
         try {
-          await db.collection('espacios').doc(session.spaceId)
-            .collection('pedidos').doc(orderId).update({ status: newStatus });
+          const spaceRef = db.collection('espacios').doc(session.spaceId);
+          const batch = db.batch();
+
+          batch.update(spaceRef.collection('pedidos').doc(order.id), { status: newStatus });
+
+          if (newStatus === 'Cancelado' && order.status !== 'Cancelado') {
+            order.items.forEach(item => {
+              const prodRef = spaceRef.collection('productos').doc(item.id);
+              batch.update(prodRef, {
+                stock: firebase.firestore.FieldValue.increment(item.qty)
+              });
+            });
+          }
+
+          await batch.commit();
         } catch (err) {
           alert('Error al actualizar estado: ' + err.message);
         }
@@ -450,8 +578,9 @@
       };
 
       const exportToExcel = async () => {
-        if (orders.length === 0) {
-          alert('No hay ventas registradas para exportar.');
+        if (!isStaff) return;
+        if (orders.length === 0 && products.length === 0) {
+          alert('No hay datos registrados para exportar.');
           return;
         }
 
@@ -522,27 +651,29 @@
             });
           });
 
-          const lastDataRow = orders.length + 3;
-          const totalRowNum = lastDataRow + 1;
-          const totalRow = sheetDetail.getRow(totalRowNum);
-          totalRow.height = 26;
-          sheetDetail.mergeCells(`A${totalRowNum}:G${totalRowNum}`);
-          totalRow.getCell(1).value = 'TOTAL GENERAL ACUMULADO';
-          totalRow.getCell(1).alignment = { horizontal: 'right', vertical: 'middle' };
-          totalRow.getCell(8).value = { formula: `SUM(H4:H${lastDataRow})` };
-          totalRow.getCell(8).numFmt = '"₲ "#,##0';
-          totalRow.getCell(8).alignment = { horizontal: 'right', vertical: 'middle' };
+          if (orders.length > 0) {
+            const lastDataRow = orders.length + 3;
+            const totalRowNum = lastDataRow + 1;
+            const totalRow = sheetDetail.getRow(totalRowNum);
+            totalRow.height = 26;
+            sheetDetail.mergeCells(`A${totalRowNum}:G${totalRowNum}`);
+            totalRow.getCell(1).value = 'TOTAL GENERAL ACUMULADO';
+            totalRow.getCell(1).alignment = { horizontal: 'right', vertical: 'middle' };
+            totalRow.getCell(8).value = { formula: `SUM(H4:H${lastDataRow})` };
+            totalRow.getCell(8).numFmt = '"₲ "#,##0';
+            totalRow.getCell(8).alignment = { horizontal: 'right', vertical: 'middle' };
 
-          for (let c = 1; c <= 8; c++) {
-            const cell = totalRow.getCell(c);
-            cell.font = { bold: true, size: 11, color: { argb: 'FF1E3A8A' } };
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
-            cell.border = {
-              top: { style: 'medium', color: { argb: 'FF2563EB' } },
-              bottom: { style: 'double', color: { argb: 'FF2563EB' } },
-              left: thinBorder.left,
-              right: thinBorder.right
-            };
+            for (let c = 1; c <= 8; c++) {
+              const cell = totalRow.getCell(c);
+              cell.font = { bold: true, size: 11, color: { argb: 'FF1E3A8A' } };
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
+              cell.border = {
+                top: { style: 'medium', color: { argb: 'FF2563EB' } },
+                bottom: { style: 'double', color: { argb: 'FF2563EB' } },
+                left: thinBorder.left,
+                right: thinBorder.right
+              };
+            }
           }
 
           const sheetSummary = workbook.addWorksheet('Resumen y Gráficos');
@@ -706,6 +837,50 @@
             });
           }
 
+          const sheetStock = workbook.addWorksheet('Inventario Actual');
+          sheetStock.columns = [
+            { width: 30 },
+            { width: 16 },
+            { width: 18 },
+            { width: 18 },
+            { width: 18 }
+          ];
+
+          sheetStock.mergeCells('A1:E1');
+          const stockTitle = sheetStock.getCell('A1');
+          stockTitle.value = 'CONTROL DE INVENTARIO Y STOCK DISPONIBLE';
+          stockTitle.font = { size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+          stockTitle.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF065F46' } };
+          stockTitle.alignment = { horizontal: 'center', vertical: 'middle' };
+          sheetStock.getRow(1).height = 30;
+
+          const stockHeader = sheetStock.getRow(3);
+          stockHeader.values = ['Producto', 'Categoría', 'Precio Unit. (₲)', 'Stock Restante', 'Estado'];
+          stockHeader.height = 24;
+          stockHeader.eachCell(cell => {
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF059669' } };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = thinBorder;
+          });
+
+          products.forEach((p, idx) => {
+            const r = sheetStock.getRow(4 + idx);
+            const st = p.stock ?? 0;
+            const statusText = st === 0 ? 'AGOTADO' : (st <= 5 ? 'STOCK BAJO' : 'DISPONIBLE');
+            r.values = [p.name, p.category, p.price, st, statusText];
+            r.height = 22;
+
+            const bg = st === 0 ? 'FFFEE2E2' : (st <= 5 ? 'FFFEF3C7' : (idx % 2 === 1 ? 'FFECFDF5' : 'FFFFFFFF'));
+            r.eachCell((cell, col) => {
+              cell.border = thinBorder;
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
+              cell.alignment = { vertical: 'middle', horizontal: col === 1 ? 'left' : (col === 3 ? 'right' : 'center') };
+              if (col === 3) cell.numFmt = '"₲ "#,##0';
+              if (col === 4 || col === 5) cell.font = { bold: true };
+            });
+          });
+
           const buffer = await workbook.xlsx.writeBuffer();
           const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
           const url = URL.createObjectURL(blob);
@@ -724,21 +899,38 @@
         }
       };
 
-      // PANTALLA DE ACCESO COMPARTIDO (COLEGIO + PIN)
+      // PANTALLA DE INGRESO CON SEPARACIÓN DE ROL (EQUIPO/CAJA CON PIN VS. SOLO VER MENÚ)
       if (!session) {
         return (
           <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col justify-center p-6 shadow-lg">
-            <div className="text-center mb-6">
+            <div className="text-center mb-5">
               <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3 shadow-md">
                 🎓
               </div>
               <h1 className="text-2xl font-bold text-gray-800">CantinApp</h1>
-              <p className="text-xs text-gray-500 mt-1">Sincronización en vivo entre Cajas y Despacho</p>
+              <p className="text-xs text-gray-500 mt-1">Gestión de ventas, stock y despacho en vivo</p>
+            </div>
+
+            <div className="flex bg-gray-200 p-1 rounded-xl text-xs font-bold mb-4">
+              <button
+                type="button"
+                onClick={() => { setAccessMode('staff'); setLoginError(''); }}
+                className={`flex-1 py-2 rounded-lg transition ${accessMode === 'staff' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}
+              >
+                🔐 Equipo / Caja (Con PIN)
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAccessMode('viewer'); setLoginError(''); }}
+                className={`flex-1 py-2 rounded-lg transition ${accessMode === 'viewer' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}
+              >
+                👀 Solo Ver Menú
+              </button>
             </div>
 
             <form onSubmit={handleJoinSpace} className="bg-blue-50/70 border border-blue-100 rounded-2xl p-5 space-y-4">
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Nombre o Código del Colegio / Evento:</label>
+                <label className="text-xs font-bold text-gray-700 block mb-1">Código del Colegio / Evento:</label>
                 <input
                   type="text"
                   required
@@ -747,22 +939,29 @@
                   onChange={(e) => setLoginSchool(e.target.value)}
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <span className="text-[11px] text-gray-500 block mt-1">Usa el mismo código en todos los celulares del equipo.</span>
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">PIN de Acceso (4 o más dígitos):</label>
-                <input
-                  type="password"
-                  inputMode="numeric"
-                  required
-                  placeholder="Ej: 1234"
-                  value={loginPin}
-                  onChange={(e) => setLoginPin(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <span className="text-[11px] text-gray-500 block mt-1">Si el código es nuevo, se creará automáticamente con este PIN.</span>
-              </div>
+              {accessMode === 'staff' ? (
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">PIN de Caja / Encargados:</label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    required
+                    placeholder="Ej: 1234"
+                    value={loginPin}
+                    onChange={(e) => setLoginPin(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-[11px] text-gray-500 block mt-1">
+                    Solo quienes tengan este PIN pueden cobrar, descontar stock o despachar.
+                  </span>
+                </div>
+              ) : (
+                <div className="bg-white/80 border border-blue-100 rounded-xl p-3 text-xs text-gray-600">
+                  Modo consulta para alumnos: muestra precios y productos disponibles en vivo, <strong>sin permitir cobrar ni modificar el stock</strong>.
+                </div>
+              )}
 
               {loginError && (
                 <div className="bg-red-100 text-red-700 text-xs p-2.5 rounded-lg font-medium">
@@ -775,7 +974,7 @@
                 disabled={isLoggingIn}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm shadow transition disabled:opacity-50"
               >
-                {isLoggingIn ? 'Conectando...' : 'Ingresar a la Cantina'}
+                {isLoggingIn ? 'Conectando...' : (accessMode === 'staff' ? 'Ingresar como Caja / Equipo' : 'Ver Menú Disponible')}
               </button>
             </form>
           </div>
@@ -794,6 +993,7 @@
       );
 
       const pendingCount = orders.filter(o => o.status === 'Pendiente').length;
+      const lowStockCount = products.filter(p => (p.stock ?? 0) <= 5).length;
 
       const closingOrders = orders.filter(o => {
         const matchesDate = o.date === closingDate;
@@ -829,7 +1029,7 @@
       });
       const historyList = Object.values(historyByDateMap).sort((a, b) => b.date.localeCompare(a.date));
 
-      const hasLegacyLocalOrders = JSON.parse(localStorage.getItem('app_orders') || '[]').length > 0;
+      const hasLegacyLocalOrders = isStaff && JSON.parse(localStorage.getItem('app_orders') || '[]').length > 0;
 
       return (
         <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col shadow-lg">
@@ -842,34 +1042,49 @@
                   <span className="inline-block w-2 h-2 rounded-full bg-emerald-300 animate-pulse" title="Conectado en vivo"></span>
                 </h1>
                 <button onClick={handleLogout} className="text-[11px] text-blue-100 underline">
-                  {session.schoolName} (Cambiar)
+                  {session.schoolName} • {isStaff ? 'Modo Caja' : 'Solo Consulta'} (Salir)
                 </button>
               </div>
-              <select 
-                value={activeRegister} 
-                onChange={(e) => setActiveRegister(e.target.value)}
-                className="bg-blue-700 text-white text-xs px-2 py-1.5 rounded font-medium border border-blue-400 focus:outline-none"
-              >
-                <option value="Caja 1">Caja 1</option>
-                <option value="Caja 2">Caja 2</option>
-                <option value="Caja 3">Caja 3</option>
-                <option value="Despacho">Despacho</option>
-              </select>
+              {isStaff ? (
+                <select 
+                  value={activeRegister} 
+                  onChange={(e) => setActiveRegister(e.target.value)}
+                  className="bg-blue-700 text-white text-xs px-2 py-1.5 rounded font-medium border border-blue-400 focus:outline-none"
+                >
+                  <option value="Caja 1">Caja 1</option>
+                  <option value="Caja 2">Caja 2</option>
+                  <option value="Caja 3">Caja 3</option>
+                  <option value="Despacho">Despacho</option>
+                </select>
+              ) : (
+                <span className="bg-blue-800/80 text-blue-100 text-[11px] px-2.5 py-1 rounded-full font-semibold">
+                  Solo lectura
+                </span>
+              )}
             </div>
             
-            <nav className="flex justify-between bg-blue-700/60 p-1 rounded-lg text-xs font-medium">
-              <button onClick={() => setActiveTab('menu')} className={`flex-1 py-1.5 rounded-md text-center transition ${activeTab === 'menu' ? 'bg-white text-blue-700 font-bold' : 'text-blue-100'}`}>Menú</button>
-              <button onClick={() => setActiveTab('delivery')} className={`flex-1 py-1.5 rounded-md text-center transition relative ${activeTab === 'delivery' ? 'bg-white text-blue-700 font-bold' : 'text-blue-100'}`}>
-                Despacho
-                {pendingCount > 0 && (
-                  <span className="ml-1 bg-amber-400 text-amber-950 text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
-                    {pendingCount}
-                  </span>
-                )}
-              </button>
-              <button onClick={() => setActiveTab('closing')} className={`flex-1 py-1.5 rounded-md text-center transition ${activeTab === 'closing' ? 'bg-white text-blue-700 font-bold' : 'text-blue-100'}`}>Cierre</button>
-              <button onClick={() => setActiveTab('products')} className={`flex-1 py-1.5 rounded-md text-center transition ${activeTab === 'products' ? 'bg-white text-blue-700 font-bold' : 'text-blue-100'}`}>Productos</button>
-            </nav>
+            {isStaff && (
+              <nav className="flex justify-between bg-blue-700/60 p-1 rounded-lg text-xs font-medium">
+                <button onClick={() => setActiveTab('menu')} className={`flex-1 py-1.5 rounded-md text-center transition ${activeTab === 'menu' ? 'bg-white text-blue-700 font-bold' : 'text-blue-100'}`}>Menú</button>
+                <button onClick={() => setActiveTab('delivery')} className={`flex-1 py-1.5 rounded-md text-center transition ${activeTab === 'delivery' ? 'bg-white text-blue-700 font-bold' : 'text-blue-100'}`}>
+                  Despacho
+                  {pendingCount > 0 && (
+                    <span className="ml-1 bg-amber-400 text-amber-950 text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
+                      {pendingCount}
+                    </span>
+                  )}
+                </button>
+                <button onClick={() => setActiveTab('closing')} className={`flex-1 py-1.5 rounded-md text-center transition ${activeTab === 'closing' ? 'bg-white text-blue-700 font-bold' : 'text-blue-100'}`}>Cierre</button>
+                <button onClick={() => setActiveTab('products')} className={`flex-1 py-1.5 rounded-md text-center transition ${activeTab === 'products' ? 'bg-white text-blue-700 font-bold' : 'text-blue-100'}`}>
+                  Stock/Prod
+                  {lowStockCount > 0 && (
+                    <span className="ml-1 bg-rose-400 text-white text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
+                      {lowStockCount}
+                    </span>
+                  )}
+                </button>
+              </nav>
+            )}
           </header>
 
           {syncError && (
@@ -890,12 +1105,12 @@
           <main className="flex-1 p-4 pb-24 overflow-y-auto">
             {isSyncing ? (
               <div className="text-center py-12 text-gray-500 text-sm">
-                Sincronizando catálogo y pedidos en vivo...
+                Sincronizando catálogo y disponibilidad en vivo...
               </div>
             ) : (
               <>
                 {/* PESTAÑA MENÚ */}
-                {activeTab === 'menu' && (
+                {(activeTab === 'menu' || !isStaff) && (
                   <div>
                     <div className="mb-4">
                       <input 
@@ -919,26 +1134,47 @@
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 mb-6">
-                      {filteredProducts.map(p => (
-                        <div key={p.id} className="bg-white border rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
-                          <img src={p.image} alt={p.name} className="h-28 w-full object-cover" />
-                          <div className="p-2 flex-1 flex flex-col justify-between">
-                            <div>
-                              <h3 className="font-semibold text-xs leading-tight text-gray-800">{p.name}</h3>
-                              <span className="text-blue-600 font-bold text-sm">₲ {p.price.toLocaleString()}</span>
+                      {filteredProducts.map(p => {
+                        const stockQty = p.stock ?? 0;
+                        const isOut = stockQty <= 0;
+                        const inCartQty = cart.find(c => c.id === p.id)?.qty || 0;
+
+                        return (
+                          <div key={p.id} className={`bg-white border rounded-xl overflow-hidden shadow-sm flex flex-col justify-between relative ${isOut ? 'opacity-70' : ''}`}>
+                            <div className="relative">
+                              <img src={p.image} alt={p.name} className={`h-28 w-full object-cover ${isOut ? 'grayscale' : ''}`} />
+                              <span className={`absolute top-1.5 right-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm ${
+                                isOut ? 'bg-red-600 text-white' :
+                                stockQty <= 5 ? 'bg-amber-400 text-amber-950' : 'bg-emerald-600 text-white'
+                              }`}>
+                                {isOut ? 'Agotado' : `Disp: ${stockQty}`}
+                              </span>
                             </div>
-                            <button 
-                              onClick={() => addToCart(p)}
-                              className="mt-2 w-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white text-xs font-semibold py-1.5 rounded-lg transition"
-                            >
-                              + Agregar
-                            </button>
+                            <div className="p-2 flex-1 flex flex-col justify-between">
+                              <div>
+                                <h3 className="font-semibold text-xs leading-tight text-gray-800">{p.name}</h3>
+                                <span className="text-blue-600 font-bold text-sm">₲ {p.price.toLocaleString()}</span>
+                              </div>
+                              {isStaff && (
+                                <button 
+                                  onClick={() => addToCart(p)}
+                                  disabled={isOut || inCartQty >= stockQty}
+                                  className={`mt-2 w-full text-xs font-semibold py-1.5 rounded-lg transition ${
+                                    isOut || inCartQty >= stockQty
+                                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                      : 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white'
+                                  }`}
+                                >
+                                  {isOut ? 'Sin Stock' : (inCartQty >= stockQty ? 'Máx. en carrito' : '+ Agregar')}
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
-                    {cart.length > 0 && (
+                    {isStaff && cart.length > 0 && (
                       <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t p-4 shadow-2xl z-20 rounded-t-2xl">
                         <h3 className="font-bold text-sm mb-2 text-gray-700">Resumen del Pedido ({activeRegister})</h3>
                         <div className="max-h-32 overflow-y-auto mb-3 divide-y text-xs">
@@ -979,15 +1215,15 @@
                           onClick={handleCheckout}
                           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm shadow transition"
                         >
-                          Confirmar Pedido & Enviar a Despacho
+                          Confirmar Cobro & Descontar Stock
                         </button>
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* PESTAÑA DESPACHO EN VIVO */}
-                {activeTab === 'delivery' && (
+                {/* PESTAÑA DESPACHO EN VIVO (SOLO EQUIPO CON PIN) */}
+                {isStaff && activeTab === 'delivery' && (
                   <div>
                     <input 
                       type="text" 
@@ -998,360 +1234,4 @@
                     />
 
                     {filteredOrdersDelivery.length === 0 ? (
-                      <div className="text-center py-8 text-gray-400 text-xs">
-                        Aún no hay pedidos en este colegio. Los pedidos cobrados en cualquier caja aparecerán aquí al instante.
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {filteredOrdersDelivery.map(order => (
-                          <div key={order.id} className={`bg-white border rounded-xl p-3 shadow-sm ${order.status === 'Pendiente' ? 'border-l-4 border-l-amber-500' : ''}`}>
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <span className="font-bold text-blue-600">{order.id}</span>
-                                <span className="text-xs text-gray-500 block">{order.register} • {order.timestamp} ({order.date})</span>
-                              </div>
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                                order.status === 'Pendiente' ? 'bg-amber-100 text-amber-800' :
-                                order.status === 'Entregado' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                              }`}>
-                                {order.status}
-                              </span>
-                            </div>
-
-                            <div className="bg-gray-50 p-2 rounded text-xs space-y-1 mb-3">
-                              {order.items.map((item, idx) => (
-                                <div key={idx} className="flex justify-between">
-                                  <span>{item.qty}x {item.name}</span>
-                                  <span className="font-medium">₲ {(item.price * item.qty).toLocaleString()}</span>
-                                </div>
-                              ))}
-                            </div>
-
-                            <div className="flex justify-between items-center pt-2 border-t text-xs">
-                              <span className="font-bold text-gray-700">Total: ₲ {order.total.toLocaleString()}</span>
-                              <div className="flex gap-1">
-                                {order.status !== 'Entregado' && (
-                                  <button 
-                                    onClick={() => updateOrderStatus(order.id, 'Entregado')}
-                                    className="bg-green-600 text-white px-3 py-1 rounded font-semibold"
-                                  >
-                                    Marcar Entregado
-                                  </button>
-                                )}
-                                {order.status !== 'Cancelado' && (
-                                  <button 
-                                    onClick={() => updateOrderStatus(order.id, 'Cancelado')}
-                                    className="bg-gray-200 text-gray-700 px-2 py-1 rounded font-medium"
-                                  >
-                                    Anular
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* PESTAÑA CIERRE DE CAJA E HISTORIAL */}
-                {activeTab === 'closing' && (
-                  <div>
-                    <div className="flex gap-2 mb-4 bg-gray-200 p-1 rounded-lg text-xs font-bold no-print">
-                      <button 
-                        onClick={() => setClosingViewMode('daily')}
-                        className={`flex-1 py-1.5 rounded-md text-center transition ${closingViewMode === 'daily' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}
-                      >
-                        Cierre del Día
-                      </button>
-                      <button 
-                        onClick={() => setClosingViewMode('history')}
-                        className={`flex-1 py-1.5 rounded-md text-center transition ${closingViewMode === 'history' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}
-                      >
-                        Historial & Comparativos
-                      </button>
-                    </div>
-
-                    {closingViewMode === 'daily' ? (
-                      <div>
-                        <div id="printable-area">
-                          <div className="bg-white border rounded-xl p-4 shadow-sm mb-4">
-                            <div className="flex justify-between items-center mb-3 border-b pb-2">
-                              <h2 className="font-bold text-base text-gray-800">📊 Cierre Global</h2>
-                              <button 
-                                onClick={handleStartNewJornada}
-                                className="bg-emerald-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg no-print hover:bg-emerald-700 transition"
-                              >
-                                ☀️ Nueva Jornada
-                              </button>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-2 mb-4 no-print">
-                              <div>
-                                <label className="text-xs text-gray-600 block mb-1">Fecha:</label>
-                                <input 
-                                  type="date" 
-                                  value={closingDate}
-                                  onChange={(e) => setClosingDate(e.target.value)}
-                                  className="w-full text-xs border rounded p-1.5"
-                                />
-                              </div>
-                              <div>
-                                <label className="text-xs text-gray-600 block mb-1">Filtrar Caja:</label>
-                                <select 
-                                  value={closingRegister} 
-                                  onChange={(e) => setClosingRegister(e.target.value)}
-                                  className="w-full text-xs border rounded p-1.5"
-                                >
-                                  <option value="Todas">Todas</option>
-                                  <option value="Caja 1">Caja 1</option>
-                                  <option value="Caja 2">Caja 2</option>
-                                  <option value="Caja 3">Caja 3</option>
-                                </select>
-                              </div>
-                            </div>
-
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center mb-4">
-                              <span className="text-xs text-blue-700 uppercase font-semibold">Total Recaudado</span>
-                              <div className="text-2xl font-bold text-blue-700">₲ {totalClosingSales.toLocaleString()}</div>
-                              <span className="text-xs text-gray-500">{closingOrders.length} pedidos procesados</span>
-                            </div>
-
-                            <h3 className="font-bold text-xs text-gray-700 mb-2">Desglose por Medio de Pago:</h3>
-                            <div className="grid grid-cols-3 gap-2 mb-4 text-xs">
-                              <div className="bg-gray-50 p-2 rounded text-center">
-                                <span className="text-gray-500 block">Efectivo</span>
-                                <span className="font-bold">₲ {(salesByPayment['Efectivo'] || 0).toLocaleString()}</span>
-                              </div>
-                              <div className="bg-gray-50 p-2 rounded text-center">
-                                <span className="text-gray-500 block">Transf.</span>
-                                <span className="font-bold">₲ {(salesByPayment['Transferencia'] || 0).toLocaleString()}</span>
-                              </div>
-                              <div className="bg-gray-50 p-2 rounded text-center">
-                                <span className="text-gray-500 block">Tarjeta</span>
-                                <span className="font-bold">₲ {(salesByPayment['Tarjeta'] || 0).toLocaleString()}</span>
-                              </div>
-                            </div>
-
-                            <h3 className="font-bold text-xs text-gray-700 mb-2">Productos Vendidos:</h3>
-                            <div className="border rounded-lg overflow-hidden text-xs">
-                              <table className="w-full text-left border-collapse">
-                                <thead className="bg-gray-100 text-gray-600 border-b">
-                                  <tr>
-                                    <th className="p-2">Prod.</th>
-                                    <th className="p-2 text-center">Cant.</th>
-                                    <th className="p-2 text-right">Subtotal</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                  {Object.keys(productSalesMap).length === 0 ? (
-                                    <tr><td colSpan="3" className="p-3 text-center text-gray-400">Sin ventas registradas</td></tr>
-                                  ) : (
-                                    Object.entries(productSalesMap).map(([name, data]) => (
-                                      <tr key={name}>
-                                        <td className="p-2 font-medium">{name}</td>
-                                        <td className="p-2 text-center">{data.qty}</td>
-                                        <td className="p-2 text-right font-semibold">₲ {data.subtotal.toLocaleString()}</td>
-                                      </tr>
-                                    ))
-                                  )}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={() => window.print()}
-                            className="flex-1 bg-gray-800 text-white py-2.5 rounded-xl font-bold text-xs shadow hover:bg-gray-900 transition"
-                          >
-                            🖨️ Imprimir Reporte
-                          </button>
-                          <button 
-                            onClick={exportToExcel}
-                            disabled={isExporting}
-                            className="flex-1 bg-emerald-600 text-white py-2.5 rounded-xl font-bold text-xs shadow hover:bg-emerald-700 transition disabled:opacity-50"
-                          >
-                            {isExporting ? 'Generando...' : '📊 Exportar Excel (.xlsx)'}
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div>
-                        <div className="bg-white border rounded-xl p-4 shadow-sm mb-4">
-                          <div className="flex justify-between items-center mb-3 border-b pb-2">
-                            <h2 className="font-bold text-base text-gray-800">📈 Comparativo por Fechas</h2>
-                            <button 
-                              onClick={exportToExcel}
-                              disabled={isExporting}
-                              className="bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg hover:bg-emerald-700 transition"
-                            >
-                              📊 Excel con Gráficos
-                            </button>
-                          </div>
-
-                          <div className="border rounded-lg overflow-hidden text-xs">
-                            <table className="w-full text-left border-collapse">
-                              <thead className="bg-gray-100 text-gray-600 border-b">
-                                <tr>
-                                  <th className="p-2">Fecha</th>
-                                  <th className="p-2 text-center">Ped.</th>
-                                  <th className="p-2 text-right">Total</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y">
-                                {historyList.length === 0 ? (
-                                  <tr><td colSpan="3" className="p-3 text-center text-gray-400">No hay historial registrado</td></tr>
-                                ) : (
-                                  historyList.map(h => (
-                                    <tr key={h.date} className="hover:bg-gray-50">
-                                      <td className="p-2 font-medium">{h.date}</td>
-                                      <td className="p-2 text-center">{h.ordersCount}</td>
-                                      <td className="p-2 text-right font-bold text-blue-600">₲ {h.total.toLocaleString()}</td>
-                                    </tr>
-                                  ))
-                                )}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* PESTAÑA GESTIÓN DE PRODUCTOS */}
-                {activeTab === 'products' && (
-                  <div>
-                    <form onSubmit={handleSaveProduct} className="bg-white border rounded-xl p-3 shadow-sm mb-4 text-xs space-y-2">
-                      <h3 className="font-bold text-sm text-gray-800 mb-1">{editingProduct ? 'Editar Producto' : 'Agregar Nuevo Producto'}</h3>
-                      <div>
-                        <label className="text-gray-600 block">Nombre del Producto:</label>
-                        <input 
-                          type="text" 
-                          required
-                          value={productForm.name}
-                          onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                          className="w-full border rounded p-1.5 mt-0.5"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-gray-600 block">Precio (₲):</label>
-                          <input 
-                            type="number" 
-                            required
-                            value={productForm.price}
-                            onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                            className="w-full border rounded p-1.5 mt-0.5"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-gray-600 block">Categoría:</label>
-                          <select 
-                            value={productForm.category}
-                            onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
-                            className="w-full border rounded p-1.5 mt-0.5"
-                          >
-                            <option value="Comida">Comida</option>
-                            <option value="Bebida">Bebida</option>
-                            <option value="Postre">Postre</option>
-                            <option value="Otros">Otros</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-gray-600 block">URL de Imagen (Opcional):</label>
-                        <input 
-                          type="url" 
-                          value={productForm.image}
-                          onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
-                          className="w-full border rounded p-1.5 mt-0.5"
-                          placeholder="https://..."
-                        />
-                      </div>
-                      <div className="flex gap-2 pt-1">
-                        <button type="submit" className="flex-1 bg-blue-600 text-white font-bold py-1.5 rounded">
-                          {editingProduct ? 'Guardar Cambios' : 'Crear Producto'}
-                        </button>
-                        {editingProduct && (
-                          <button 
-                            type="button" 
-                            onClick={() => { setEditingProduct(null); setProductForm({ name: '', price: '', category: 'Comida', image: '' }); }}
-                            className="bg-gray-200 text-gray-700 font-medium px-3 rounded"
-                          >
-                            Cancelar
-                          </button>
-                        )}
-                      </div>
-                    </form>
-
-                    <h3 className="font-bold text-xs text-gray-700 mb-2">Catálogo Compartido en Vivo:</h3>
-                    <div className="space-y-2">
-                      {products.map(p => (
-                        <div key={p.id} className="bg-white border rounded-lg p-2 flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
-                            <img src={p.image} alt={p.name} className="w-10 h-10 rounded object-cover" />
-                            <div>
-                              <div className="font-bold text-gray-800">{p.name}</div>
-                              <div className="text-gray-500">₲ {p.price.toLocaleString()} • {p.category}</div>
-                            </div>
-                          </div>
-                          <div className="flex gap-1">
-                            <button onClick={() => startEditProduct(p)} className="bg-blue-100 text-blue-700 px-2 py-1 rounded font-semibold">Editar</button>
-                            <button onClick={() => deleteProduct(p.id)} className="bg-red-100 text-red-700 px-2 py-1 rounded font-semibold">Eliminar</button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </main>
-
-          {/* MODAL VOUCHER Y QR */}
-          {activeOrder && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl p-5 w-full max-w-sm text-center shadow-xl">
-                <div className="text-green-500 font-bold text-sm mb-1">¡Pedido Registrado y Enviado!</div>
-                <h2 className="text-xl font-bold text-gray-800">{activeOrder.id}</h2>
-                <p className="text-xs text-gray-500 mb-4">{activeOrder.register} • {activeOrder.paymentMethod}</p>
-
-                <div className="flex justify-center mb-4 bg-gray-50 p-3 rounded-xl">
-                  <div id="qrcode"></div>
-                </div>
-
-                <div className="text-left bg-gray-50 p-3 rounded-xl text-xs space-y-1 mb-4">
-                  <div className="font-bold text-gray-700 mb-1 border-b pb-1">Resumen del consumo:</div>
-                  {activeOrder.items.map((it, idx) => (
-                    <div key={idx} className="flex justify-between">
-                      <span>{it.qty}x {it.name}</span>
-                      <span className="font-semibold">₲ {(it.price * it.qty).toLocaleString()}</span>
-                    </div>
-                  ))}
-                  <div className="flex justify-between font-bold pt-1 border-t text-blue-600 text-sm">
-                    <span>Total Pagado:</span>
-                    <span>₲ {activeOrder.total.toLocaleString()}</span>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setActiveOrder(null)}
-                  className="w-full bg-blue-600 text-white font-bold py-2 rounded-xl text-sm"
-                >
-                  Cerrar Voucher
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
-</body>
-</html>
+                      <div className="text-center py-8 text-gray-4
