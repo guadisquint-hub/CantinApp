@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CantinApp - Por Grados y Cursos</title>
+  <title>CantinApp</title>
   
   <!-- Configuración PWA para Subdominio -->
   <link rel="manifest" href="./manifest.json">
@@ -94,6 +94,83 @@
       { id: 'p8', name: 'Brownie', price: 5000, category: 'Postre', stock: 20, image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=300&q=80' }
     ];
 
+    function GuideModal({ isOpen, onClose }) {
+      const [activeSection, setActiveSection] = useState('caja');
+      if (!isOpen) return null;
+
+      return (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="bg-blue-600 text-white p-4 flex justify-between items-center">
+              <h3 className="font-bold text-base flex items-center gap-2">📖 Guía Interactiva de Uso</h3>
+              <button onClick={onClose} className="bg-blue-700 text-white w-7 h-7 rounded-full font-bold flex items-center justify-center hover:bg-blue-800">✕</button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-1 bg-gray-100 p-2 text-xs font-bold text-center">
+              <button onClick={() => setActiveSection('caja')} className={`py-2 rounded-lg transition ${activeSection === 'caja' ? 'bg-blue-600 text-white shadow' : 'text-gray-600'}`}>🛒 Alumnos / Caja</button>
+              <button onClick={() => setActiveSection('profesor')} className={`py-2 rounded-lg transition ${activeSection === 'profesor' ? 'bg-blue-600 text-white shadow' : 'text-gray-600'}`}>👨‍🏫 Profesor</button>
+              <button onClick={() => setActiveSection('publico')} className={`py-2 rounded-lg transition ${activeSection === 'publico' ? 'bg-blue-600 text-white shadow' : 'text-gray-600'}`}>📱 Descarga</button>
+            </div>
+
+            <div className="p-4 overflow-y-auto space-y-3 text-xs text-gray-700 flex-1">
+              {activeSection === 'caja' && (
+                <div className="space-y-2.5">
+                  <div className="bg-blue-50 border-l-4 border-blue-600 p-2.5 rounded">
+                    <strong className="block text-blue-900 font-bold mb-1">1. Cobro y Calculador de Vuelto</strong>
+                    Selecciona los productos tocando "+ Agregar". En el carrito inferior elige el medio de pago (Efectivo, Transferencia, Tarjeta). Si es efectivo, usa los botones rápidos (+10mil, +15mil, +20mil, +25mil, +50mil, +100mil) para calcular el vuelto exacto de forma instantánea.
+                  </div>
+                  <div className="bg-blue-50 border-l-4 border-blue-600 p-2.5 rounded">
+                    <strong className="block text-blue-900 font-bold mb-1">2. Ingreso de Mercadería</strong>
+                    Si llega stock nuevo al puesto, puedes tocar el botón verde "+ Sumar" en cualquier producto para actualizar las unidades disponibles al instante.
+                  </div>
+                  <div className="bg-blue-50 border-l-4 border-blue-600 p-2.5 rounded">
+                    <strong className="block text-blue-900 font-bold mb-1">3. Despacho de Pedidos</strong>
+                    En la pestaña "Despacho" verás los pedidos en curso. Al entregarlos al cliente, toca "Entregar" para marcar el pedido como completado.
+                  </div>
+                </div>
+              )}
+
+              {activeSection === 'profesor' && (
+                <div className="space-y-2.5">
+                  <div className="bg-amber-50 border-l-4 border-amber-600 p-2.5 rounded">
+                    <strong className="block text-amber-900 font-bold mb-1">1. Acceso con PIN de Profesor</strong>
+                    Ingresa con tu clave secreta de profesor para desbloquear herramientas de administración exclusivas del curso.
+                  </div>
+                  <div className="bg-amber-50 border-l-4 border-amber-600 p-2.5 rounded">
+                    <strong className="block text-amber-900 font-bold mb-1">2. Control de Consumo Interno</strong>
+                    Solo el profesor cuenta con el botón "- Descontar consumo" en el inventario para registrar cuando un alumno o ayudante consume un producto mientras trabaja.
+                  </div>
+                  <div className="bg-amber-50 border-l-4 border-amber-600 p-2.5 rounded">
+                    <strong className="block text-amber-900 font-bold mb-1">3. Arqueo y Exportación a Excel</strong>
+                    En la pestaña "Arqueo" puedes auditar las ventas totales del día, filtrar por caja, imprimir comprobantes o exportar el reporte completo a Excel con un solo toque.
+                  </div>
+                </div>
+              )}
+
+              {activeSection === 'publico' && (
+                <div className="space-y-2.5">
+                  <div className="bg-emerald-50 border-l-4 border-emerald-600 p-2.5 rounded">
+                    <strong className="block text-emerald-900 font-bold mb-1">1. Instalar en la Pantalla de Inicio</strong>
+                    Abre Google Chrome en tu celular e ingresa a <code className="bg-white px-1 rounded font-bold">https://cantinapp.agm.com.py</code>
+                  </div>
+                  <div className="bg-emerald-50 border-l-4 border-emerald-600 p-2.5 rounded">
+                    <strong className="block text-emerald-900 font-bold mb-1">2. Acceso Directo sin Navegador</strong>
+                    Toca los tres puntos de Chrome y selecciona "Instalar aplicación" o "Agregar a la pantalla principal". La app se abrirá a pantalla completa y sincronizará en tiempo real con Firebase.
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-3 bg-gray-50 border-t text-center">
+              <button onClick={onClose} className="w-full bg-blue-600 text-white font-bold py-2 rounded-xl text-xs hover:bg-blue-700">
+                ¡Entendido, cerrar guía!
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     function App() {
       const [session, setSession] = useState(() => {
         const saved = localStorage.getItem('cantinapp_grade_session');
@@ -106,6 +183,10 @@
       const [inputPin, setInputPin] = useState('');
       const [loginError, setLoginError] = useState('');
       const [isLoggingIn, setIsLoggingIn] = useState(false);
+      const [isGuideOpen, setIsGuideOpen] = useState(false);
+
+      // Estado para alternar la vista de staff (login de curso) desde la portada para el público
+      const [showStaffLogin, setShowStaffLogin] = useState(false);
 
       const [products, setProducts] = useState([]);
       const [orders, setOrders] = useState([]);
@@ -308,6 +389,7 @@
           setProducts([]);
           setOrders([]);
           setCart([]);
+          setShowStaffLogin(false);
         }
       };
 
@@ -607,100 +689,123 @@
 
       if (!session) {
         return (
-          <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col justify-center p-6 shadow-lg">
-            <div className="text-center mb-5">
+          <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col justify-center p-6 shadow-lg relative">
+            <button
+              onClick={() => setIsGuideOpen(true)}
+              className="absolute top-4 right-4 bg-blue-50 text-blue-600 border border-blue-200 text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm hover:bg-blue-100 flex items-center gap-1"
+            >
+              📖 Guía de Uso
+            </button>
+
+            <div className="text-center mb-6 mt-4">
               <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3 shadow-md">
                 🎓
               </div>
-              <h1 className="text-2xl font-bold text-gray-800">CantinApp • Por Grados</h1>
-              <p className="text-xs text-gray-500 mt-1">Gestión independiente por curso con PIN de Profesor</p>
+              <h1 className="text-2xl font-bold text-gray-800">CantinApp</h1>
+              <p className="text-xs text-gray-500 mt-1">Sistema de Gestión para Cantinas Escolares</p>
             </div>
 
-            <div className="grid grid-cols-3 gap-1 bg-gray-200 p-1 rounded-xl text-[11px] font-bold mb-4">
-              <button
-                type="button"
-                onClick={() => { setAccessMode('caja'); setLoginError(''); }}
-                className={`py-2 rounded-lg transition ${accessMode === 'caja' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}
-              >
-                🛒 Alumnos / Caja
-              </button>
-              <button
-                type="button"
-                onClick={() => { setAccessMode('profesor'); setLoginError(''); }}
-                className={`py-2 rounded-lg transition ${accessMode === 'profesor' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}
-              >
-                👨‍🏫 Profesor (Admin)
-              </button>
-              <button
-                type="button"
-                onClick={() => { setAccessMode('viewer'); setLoginError(''); }}
-                className={`py-2 rounded-lg transition ${accessMode === 'viewer' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}
-              >
-                👀 Menú Libre
-              </button>
-            </div>
+            {!showStaffLogin ? (
+              <div className="space-y-3">
+                <button
+                  onClick={() => { setAccessMode('viewer'); setSchoolInput('Colegio'); setGradeInput('Publico'); }}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-sm shadow transition flex items-center justify-center gap-2"
+                >
+                  👀 Consultar Menú en Vivo
+                </button>
 
-            <form onSubmit={handleLogin} className="bg-blue-50/70 border border-blue-100 rounded-2xl p-5 space-y-3.5">
-              <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Nombre del Colegio (Espacio):</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: Colegio San José"
-                  value={schoolInput}
-                  onChange={(e) => setSchoolInput(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <button
+                  onClick={() => setShowStaffLogin(true)}
+                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl text-xs transition border border-gray-300"
+                >
+                  🔐 Acceso Personal / Staff (Alumnos y Profesores)
+                </button>
               </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-1 bg-gray-200 p-1 rounded-xl text-[11px] font-bold mb-2">
+                  <button
+                    type="button"
+                    onClick={() => { setAccessMode('caja'); setLoginError(''); }}
+                    className={`py-2 rounded-lg transition ${accessMode === 'caja' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}
+                  >
+                    🛒 Alumnos / Caja
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setAccessMode('profesor'); setLoginError(''); }}
+                    className={`py-2 rounded-lg transition ${accessMode === 'profesor' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}
+                  >
+                    👨‍🏫 Profesor (Admin)
+                  </button>
+                </div>
 
-              <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Grado / Curso:</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: 9no Grado"
-                  value={gradeInput}
-                  onChange={(e) => setGradeInput(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <form onSubmit={handleLogin} className="bg-blue-50/70 border border-blue-100 rounded-2xl p-4 space-y-3">
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">Nombre del Colegio:</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej: Colegio San José"
+                      value={schoolInput}
+                      onChange={(e) => setSchoolInput(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">Grado / Curso:</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej: 9no Grado"
+                      value={gradeInput}
+                      onChange={(e) => setGradeInput(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">
+                      {accessMode === 'profesor' ? 'PIN del Profesor:' : 'PIN de Caja:'}
+                    </label>
+                    <input
+                      type="password"
+                      inputMode="numeric"
+                      required
+                      placeholder="Ej: 1234"
+                      value={inputPin}
+                      onChange={(e) => setInputPin(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {loginError && (
+                    <div className="bg-red-100 text-red-700 text-xs p-2.5 rounded-lg font-medium">
+                      {loginError}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isLoggingIn}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm shadow transition disabled:opacity-50"
+                  >
+                    {isLoggingIn ? 'Conectando...' : (accessMode === 'profesor' ? 'Ingresar como Profesor' : 'Ingresar a Caja')}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => { setShowStaffLogin(false); setLoginError(''); }}
+                    className="w-full text-center text-xs text-gray-500 underline pt-1"
+                  >
+                    ← Volver a la portada principal
+                  </button>
+                </form>
               </div>
+            )}
 
-              {accessMode !== 'viewer' && (
-                <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">
-                    {accessMode === 'profesor' ? 'PIN del Profesor (Admin):' : 'PIN de Caja / Alumnos:'}
-                  </label>
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    required
-                    placeholder="Ej: 1234"
-                    value={inputPin}
-                    onChange={(e) => setInputPin(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <span className="text-[10px] text-gray-500 block mt-1">
-                    {accessMode === 'profesor' 
-                      ? 'Acceso para reportes, stock, edición y consumo interno.' 
-                      : 'Acceso para cobrar, calcular vuelto, sumar stock y registrar pedidos.'}
-                  </span>
-                </div>
-              )}
-
-              {loginError && (
-                <div className="bg-red-100 text-red-700 text-xs p-2.5 rounded-lg font-medium">
-                  {loginError}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={isLoggingIn}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm shadow transition disabled:opacity-50"
-              >
-                {isLoggingIn ? 'Conectando...' : (accessMode === 'profesor' ? 'Ingresar como Profesor' : accessMode === 'caja' ? 'Ingresar a Caja' : 'Ver Menú')}
-              </button>
-            </form>
+            <GuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
           </div>
         );
       }
@@ -727,7 +832,7 @@
       }, {});
 
       return (
-        <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col shadow-lg">
+        <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col shadow-lg relative">
           {/* Encabezado */}
           <header className="bg-blue-600 text-white p-3.5 sticky top-0 z-30 shadow-md">
             <div className="flex justify-between items-center mb-2">
@@ -736,9 +841,14 @@
                   🎓 {session.gradeName}
                   <span className="inline-block w-2 h-2 rounded-full bg-emerald-300 animate-pulse" title="En vivo"></span>
                 </h1>
-                <button onClick={handleLogout} className="text-[11px] text-blue-100 underline">
-                  {session.schoolName} • {isProfessor ? 'Profesor (Admin)' : 'Caja Alumnos'} (Salir)
-                </button>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <button onClick={handleLogout} className="text-[11px] text-blue-100 underline">
+                    {session.schoolName} • {isProfessor ? 'Profesor' : session.role === 'viewer' ? 'Público' : 'Caja'} (Salir)
+                  </button>
+                  <button onClick={() => setIsGuideOpen(true)} className="text-[10px] bg-blue-700 px-2 py-0.5 rounded text-blue-100 font-bold hover:bg-blue-800">
+                    📖 Guía
+                  </button>
+                </div>
               </div>
               {isStaff ? (
                 <select
@@ -752,7 +862,7 @@
                 </select>
               ) : (
                 <span className="bg-blue-800 text-blue-100 text-[11px] px-2.5 py-1 rounded-full font-semibold">
-                  Consulta
+                  Consulta Libre
                 </span>
               )}
             </div>
@@ -1253,6 +1363,8 @@
               </div>
             </div>
           )}
+
+          <GuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
         </div>
       );
     }
