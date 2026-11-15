@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CantinApp</title>
   
-  <!-- Configuración PWA para Subdominio -->
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#2563eb">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -94,97 +93,37 @@
       { id: 'p8', name: 'Brownie', price: 5000, category: 'Postre', stock: 20, image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=300&q=80' }
     ];
 
-    function GuideModal({ isOpen, onClose }) {
-      const [activeSection, setActiveSection] = useState('caja');
-      if (!isOpen) return null;
-
-      return (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
-            <div className="bg-blue-600 text-white p-4 flex justify-between items-center">
-              <h3 className="font-bold text-base flex items-center gap-2">📖 Guía Interactiva de Uso</h3>
-              <button onClick={onClose} className="bg-blue-700 text-white w-7 h-7 rounded-full font-bold flex items-center justify-center hover:bg-blue-800">✕</button>
-            </div>
-
-            <div className="grid grid-cols-3 gap-1 bg-gray-100 p-2 text-xs font-bold text-center">
-              <button onClick={() => setActiveSection('caja')} className={`py-2 rounded-lg transition ${activeSection === 'caja' ? 'bg-blue-600 text-white shadow' : 'text-gray-600'}`}>🛒 Alumnos / Caja</button>
-              <button onClick={() => setActiveSection('profesor')} className={`py-2 rounded-lg transition ${activeSection === 'profesor' ? 'bg-blue-600 text-white shadow' : 'text-gray-600'}`}>👨‍🏫 Profesor</button>
-              <button onClick={() => setActiveSection('publico')} className={`py-2 rounded-lg transition ${activeSection === 'publico' ? 'bg-blue-600 text-white shadow' : 'text-gray-600'}`}>📱 Descarga</button>
-            </div>
-
-            <div className="p-4 overflow-y-auto space-y-3 text-xs text-gray-700 flex-1">
-              {activeSection === 'caja' && (
-                <div className="space-y-2.5">
-                  <div className="bg-blue-50 border-l-4 border-blue-600 p-2.5 rounded">
-                    <strong className="block text-blue-900 font-bold mb-1">1. Cobro y Calculador de Vuelto</strong>
-                    Selecciona los productos tocando "+ Agregar". En el carrito inferior elige el medio de pago (Efectivo, Transferencia, Tarjeta). Si es efectivo, usa los botones rápidos (+10mil, +15mil, +20mil, +25mil, +50mil, +100mil) para calcular el vuelto exacto de forma instantánea.
-                  </div>
-                  <div className="bg-blue-50 border-l-4 border-blue-600 p-2.5 rounded">
-                    <strong className="block text-blue-900 font-bold mb-1">2. Ingreso de Mercadería</strong>
-                    Si llega stock nuevo al puesto, puedes tocar el botón verde "+ Sumar" en cualquier producto para actualizar las unidades disponibles al instante.
-                  </div>
-                  <div className="bg-blue-50 border-l-4 border-blue-600 p-2.5 rounded">
-                    <strong className="block text-blue-900 font-bold mb-1">3. Despacho de Pedidos</strong>
-                    En la pestaña "Despacho" verás los pedidos en curso. Al entregarlos al cliente, toca "Entregar" para marcar el pedido como completado.
-                  </div>
-                </div>
-              )}
-
-              {activeSection === 'profesor' && (
-                <div className="space-y-2.5">
-                  <div className="bg-amber-50 border-l-4 border-amber-600 p-2.5 rounded">
-                    <strong className="block text-amber-900 font-bold mb-1">1. Acceso con PIN de Profesor</strong>
-                    Ingresa con tu clave secreta de profesor para desbloquear herramientas de administración exclusivas del curso.
-                  </div>
-                  <div className="bg-amber-50 border-l-4 border-amber-600 p-2.5 rounded">
-                    <strong className="block text-amber-900 font-bold mb-1">2. Control de Consumo Interno</strong>
-                    Solo el profesor cuenta con el botón "- Descontar consumo" en el inventario para registrar cuando un alumno o ayudante consume un producto mientras trabaja.
-                  </div>
-                  <div className="bg-amber-50 border-l-4 border-amber-600 p-2.5 rounded">
-                    <strong className="block text-amber-900 font-bold mb-1">3. Arqueo y Exportación a Excel</strong>
-                    En la pestaña "Arqueo" puedes auditar las ventas totales del día, filtrar por caja, imprimir comprobantes o exportar el reporte completo a Excel con un solo toque.
-                  </div>
-                </div>
-              )}
-
-              {activeSection === 'publico' && (
-                <div className="space-y-2.5">
-                  <div className="bg-emerald-50 border-l-4 border-emerald-600 p-2.5 rounded">
-                    <strong className="block text-emerald-900 font-bold mb-1">1. Instalar en la Pantalla de Inicio</strong>
-                    Abre Google Chrome en tu celular e ingresa a <code className="bg-white px-1 rounded font-bold">https://cantinapp.agm.com.py</code>
-                  </div>
-                  <div className="bg-emerald-50 border-l-4 border-emerald-600 p-2.5 rounded">
-                    <strong className="block text-emerald-900 font-bold mb-1">2. Acceso Directo sin Navegador</strong>
-                    Toca los tres puntos de Chrome y selecciona "Instalar aplicación" o "Agregar a la pantalla principal". La app se abrirá a pantalla completa y sincronizará en tiempo real con Firebase.
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="p-3 bg-gray-50 border-t text-center">
-              <button onClick={onClose} className="w-full bg-blue-600 text-white font-bold py-2 rounded-xl text-xs hover:bg-blue-700">
-                ¡Entendido, cerrar guía!
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
     function App() {
+      // Detección automática por URL (ej: ?colegio=san-jose&grado=9no)
+      useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const colParam = params.get('colegio');
+        const gradParam = params.get('grado');
+        if (colParam && gradParam) {
+          const autoSession = {
+            schoolId: colParam.toLowerCase(),
+            schoolName: colParam.toUpperCase(),
+            gradeId: gradParam.toLowerCase(),
+            gradeName: gradParam.toUpperCase(),
+            role: 'viewer'
+          };
+          localStorage.setItem('cantinapp_grade_session', JSON.stringify(autoSession));
+          setSession(autoSession);
+        }
+      }, []);
+
       const [session, setSession] = useState(() => {
         const saved = localStorage.getItem('cantinapp_grade_session');
         return saved ? JSON.parse(saved) : null;
       });
 
-      const [accessMode, setAccessMode] = useState('caja');
+      const [portalMode, setPortalMode] = useState('publico'); // 'publico' o 'staff'
+      const [staffRole, setStaffRole] = useState('caja'); // 'caja' o 'profesor'
       const [schoolInput, setSchoolInput] = useState('');
       const [gradeInput, setGradeInput] = useState('');
       const [inputPin, setInputPin] = useState('');
       const [loginError, setLoginError] = useState('');
       const [isLoggingIn, setIsLoggingIn] = useState(false);
-      const [isGuideOpen, setIsGuideOpen] = useState(false);
-      const [showStaffLogin, setShowStaffLogin] = useState(false);
 
       const [products, setProducts] = useState([]);
       const [orders, setOrders] = useState([]);
@@ -291,29 +230,48 @@
         }
       }, [activeOrder]);
 
-      const handleViewerLogin = async () => {
+      // Generador de QR para el Colegio / Evento
+      useEffect(() => {
+        if (session && isProfessor) {
+          const qrSchoolContainer = document.getElementById('school-qrcode');
+          if (qrSchoolContainer) {
+            qrSchoolContainer.innerHTML = '';
+            const currentUrl = window.location.origin + window.location.pathname + `?colegio=${session.schoolId}&grado=${session.gradeId}`;
+            new QRCode(qrSchoolContainer, { text: currentUrl, width: 140, height: 140 });
+          }
+        }
+      }, [session, isProfessor, activeTab]);
+
+      const handlePublicLogin = async (e) => {
+        e.preventDefault();
+        const cleanSchool = schoolInput.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+        const cleanGrade = gradeInput.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+
+        if (!cleanSchool || !cleanGrade) {
+          setLoginError('Ingresa el nombre del Colegio y el Evento / Grado.');
+          return;
+        }
+
         setIsLoggingIn(true);
-        const cleanSchool = 'colegio';
-        const cleanGrade = 'general';
-        const gradeDocId = `${cleanSchool}__${cleanGrade}`;
-        const gradeRef = db.collection('grados_cantina').doc(gradeDocId);
+        setLoginError('');
 
         try {
+          const gradeDocId = `${cleanSchool}__${cleanGrade}`;
+          const gradeRef = db.collection('grados_cantina').doc(gradeDocId);
           const docSnap = await gradeRef.get();
+
           if (!docSnap.exists) {
-            await gradeRef.set({
-              schoolName: 'Colegio',
-              gradeName: 'General',
-              profesorPin: '1234',
-              cajaPin: '1234',
-              createdAt: Date.now()
-            });
+            setLoginError('Ese colegio/evento aún no ha sido registrado por el staff.');
+            setIsLoggingIn(false);
+            return;
           }
+
+          const data = docSnap.data();
           const newSession = {
             schoolId: cleanSchool,
-            schoolName: 'Cantina Escolar',
+            schoolName: data.schoolName || schoolInput.trim(),
             gradeId: cleanGrade,
-            gradeName: 'Menú General',
+            gradeName: data.gradeName || gradeInput.trim(),
             role: 'viewer'
           };
           localStorage.setItem('cantinapp_grade_session', JSON.stringify(newSession));
@@ -321,13 +279,13 @@
           setActiveTab('menu');
         } catch (err) {
           console.error(err);
-          alert('Error al cargar el menú.');
+          setLoginError('Error de conexión con Firebase.');
         } finally {
           setIsLoggingIn(false);
         }
       };
 
-      const handleLogin = async (e) => {
+      const handleStaffLogin = async (e) => {
         e.preventDefault();
         const cleanSchool = schoolInput.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
         const cleanGrade = gradeInput.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
@@ -353,7 +311,7 @@
 
           if (docSnap.exists) {
             const data = docSnap.data();
-            if (accessMode === 'profesor') {
+            if (staffRole === 'profesor') {
               if (data.profesorPin !== pin) {
                 setLoginError('PIN de Profesor incorrecto.');
                 setIsLoggingIn(false);
@@ -370,8 +328,8 @@
             await gradeRef.set({
               schoolName: schoolInput.trim(),
               gradeName: gradeInput.trim(),
-              profesorPin: accessMode === 'profesor' ? pin : '1234',
-              cajaPin: accessMode === 'caja' ? pin : '1234',
+              profesorPin: staffRole === 'profesor' ? pin : '1234',
+              cajaPin: staffRole === 'caja' ? pin : '1234',
               createdAt: Date.now()
             });
           }
@@ -384,11 +342,11 @@
             schoolName: gradeData.schoolName || schoolInput.trim(),
             gradeId: cleanGrade,
             gradeName: gradeData.gradeName || gradeInput.trim(),
-            role: accessMode
+            role: staffRole
           };
           localStorage.setItem('cantinapp_grade_session', JSON.stringify(newSession));
           setSession(newSession);
-          if (accessMode === 'profesor') setActiveTab('closing');
+          if (staffRole === 'profesor') setActiveTab('closing');
         } catch (err) {
           console.error(err);
           setLoginError('Error de conexión con Firebase.');
@@ -398,13 +356,14 @@
       };
 
       const handleLogout = () => {
-        if (confirm('¿Deseas cerrar sesión?')) {
+        if (confirm('¿Deseas salir de la sesión actual?')) {
           localStorage.removeItem('cantinapp_grade_session');
+          // Limpiar parámetros URL para volver limpio
+          window.history.replaceState({}, document.title, window.location.pathname);
           setSession(null);
           setProducts([]);
           setOrders([]);
           setCart([]);
-          setShowStaffLogin(false);
         }
       };
 
@@ -705,58 +664,94 @@
       if (!session) {
         return (
           <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col justify-center p-6 shadow-lg relative">
-            <button
-              onClick={() => setIsGuideOpen(true)}
-              className="absolute top-4 right-4 bg-blue-50 text-blue-600 border border-blue-200 text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm hover:bg-blue-100 flex items-center gap-1"
-            >
-              📖 Guía de Uso
-            </button>
-
             <div className="text-center mb-6 mt-4">
               <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3 shadow-md">
                 🥟
               </div>
               <h1 className="text-2xl font-bold text-gray-800">CantinApp</h1>
-              <p className="text-xs text-gray-500 mt-1">Sistema de Gestión para Cantinas Escolares</p>
+              <p className="text-xs text-gray-500 mt-1">Gestión de Cantinas Escolares</p>
             </div>
 
-            {!showStaffLogin ? (
-              <div className="space-y-3">
-                <button
-                  onClick={handleViewerLogin}
-                  disabled={isLoggingIn}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-sm shadow transition flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {isLoggingIn ? 'Cargando menú...' : '👀 Consultar Menú en Vivo'}
-                </button>
+            {/* Pestañas Principales: Público vs Staff */}
+            <div className="grid grid-cols-2 gap-1 bg-gray-200 p-1 rounded-xl text-xs font-bold mb-4">
+              <button
+                type="button"
+                onClick={() => { setPortalMode('publico'); setLoginError(''); }}
+                className={`py-2.5 rounded-lg transition ${portalMode === 'publico' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}
+              >
+                👀 Vista Público
+              </button>
+              <button
+                type="button"
+                onClick={() => { setPortalMode('staff'); setLoginError(''); }}
+                className={`py-2.5 rounded-lg transition ${portalMode === 'staff' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}
+              >
+                🔐 Acceso Staff
+              </button>
+            </div>
+
+            {portalMode === 'publico' ? (
+              <form onSubmit={handlePublicLogin} className="bg-blue-50/70 border border-blue-100 rounded-2xl p-5 space-y-3.5">
+                <h3 className="font-bold text-xs text-blue-900 uppercase tracking-wide text-center">Consultar Menú del Colegio</h3>
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">Nombre del Colegio:</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: Colegio San José"
+                    value={schoolInput}
+                    onChange={(e) => setSchoolInput(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">Evento / Grado:</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: 9no Grado"
+                    value={gradeInput}
+                    onChange={(e) => setGradeInput(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {loginError && (
+                  <div className="bg-red-100 text-red-700 text-xs p-2.5 rounded-lg font-medium">
+                    {loginError}
+                  </div>
+                )}
 
                 <button
-                  onClick={() => setShowStaffLogin(true)}
-                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl text-xs transition border border-gray-300"
+                  type="submit"
+                  disabled={isLoggingIn}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm shadow transition disabled:opacity-50"
                 >
-                  🔐 Acceso Personal / Staff (Alumnos y Profesores)
+                  {isLoggingIn ? 'Cargando...' : 'Ver Menú y Stock en Vivo'}
                 </button>
-              </div>
+                <p className="text-[11px] text-center text-gray-500">También puedes escanear directamente el código QR impreso en el colegio.</p>
+              </form>
             ) : (
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-1 bg-gray-200 p-1 rounded-xl text-[11px] font-bold mb-2">
+                <div className="grid grid-cols-2 gap-1 bg-gray-100 p-1 rounded-lg text-[11px] font-bold mb-2">
                   <button
                     type="button"
-                    onClick={() => { setAccessMode('caja'); setLoginError(''); }}
-                    className={`py-2 rounded-lg transition ${accessMode === 'caja' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}
+                    onClick={() => { setStaffRole('caja'); setLoginError(''); }}
+                    className={`py-1.5 rounded transition ${staffRole === 'caja' ? 'bg-blue-600 text-white' : 'text-gray-600'}`}
                   >
-                    🛒 Alumnos / Caja
+                    🛒 Caja / Alumnos
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setAccessMode('profesor'); setLoginError(''); }}
-                    className={`py-2 rounded-lg transition ${accessMode === 'profesor' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}
+                    onClick={() => { setStaffRole('profesor'); setLoginError(''); }}
+                    className={`py-1.5 rounded transition ${staffRole === 'profesor' ? 'bg-blue-600 text-white' : 'text-gray-600'}`}
                   >
                     👨‍🏫 Profesor (Admin)
                   </button>
                 </div>
 
-                <form onSubmit={handleLogin} className="bg-blue-50/70 border border-blue-100 rounded-2xl p-4 space-y-3">
+                <form onSubmit={handleStaffLogin} className="bg-blue-50/70 border border-blue-100 rounded-2xl p-4 space-y-3">
                   <div>
                     <label className="text-xs font-bold text-gray-700 block mb-1">Nombre del Colegio:</label>
                     <input
@@ -783,7 +778,7 @@
 
                   <div>
                     <label className="text-xs font-bold text-gray-700 block mb-1">
-                      {accessMode === 'profesor' ? 'PIN del Profesor:' : 'PIN de Caja:'}
+                      {staffRole === 'profesor' ? 'PIN del Profesor:' : 'PIN de Caja:'}
                     </label>
                     <input
                       type="password"
@@ -807,21 +802,11 @@
                     disabled={isLoggingIn}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm shadow transition disabled:opacity-50"
                   >
-                    {isLoggingIn ? 'Conectando...' : (accessMode === 'profesor' ? 'Ingresar como Profesor' : 'Ingresar a Caja')}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => { setShowStaffLogin(false); setLoginError(''); }}
-                    className="w-full text-center text-xs text-gray-500 underline pt-1"
-                  >
-                    ← Volver a la portada principal
+                    {isLoggingIn ? 'Conectando...' : (staffRole === 'profesor' ? 'Ingresar como Profesor' : 'Ingresar a Caja')}
                   </button>
                 </form>
               </div>
             )}
-
-            <GuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
           </div>
         );
       }
@@ -861,9 +846,6 @@
                   <button onClick={handleLogout} className="text-[11px] text-blue-100 underline">
                     {session.schoolName} • {isProfessor ? 'Profesor' : session.role === 'viewer' ? 'Público' : 'Caja'} (Salir)
                   </button>
-                  <button onClick={() => setIsGuideOpen(true)} className="text-[10px] bg-blue-700 px-2 py-0.5 rounded text-blue-100 font-bold hover:bg-blue-800">
-                    📖 Guía
-                  </button>
                 </div>
               </div>
               {isStaff ? (
@@ -878,7 +860,7 @@
                 </select>
               ) : (
                 <span className="bg-blue-800 text-blue-100 text-[11px] px-2.5 py-1 rounded-full font-semibold">
-                  Consulta Libre
+                  Menú Público
                 </span>
               )}
             </div>
@@ -893,6 +875,11 @@
                 <button onClick={() => setActiveTab('products')} className={`flex-1 py-1.5 rounded text-center transition ${activeTab === 'products' ? 'bg-white text-blue-700 font-bold' : 'text-blue-100'}`}>
                   Stock {lowStockCount > 0 ? `(!)` : ''}
                 </button>
+                {isProfessor && (
+                  <button onClick={() => setActiveTab('qr')} className={`flex-1 py-1.5 rounded text-center transition ${activeTab === 'qr' ? 'bg-white text-blue-700 font-bold' : 'text-blue-100'}`}>
+                    QR Colegio
+                  </button>
+                )}
               </nav>
             )}
           </header>
@@ -905,7 +892,7 @@
 
           <main className="flex-1 p-4 pb-36 overflow-y-auto">
             {isSyncing ? (
-              <div className="text-center py-12 text-gray-500 text-sm">Sincronizando menú en vivo...</div>
+              <div className="text-center py-12 text-gray-500 text-sm">Sincronizando información en vivo...</div>
             ) : (
               <>
                 {/* 1. MENÚ Y COBRO */}
@@ -1134,23 +1121,7 @@
                     {!isProfessor ? (
                       <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
                         <h3 className="font-bold text-sm text-amber-900 mb-1">🔒 Sección Protegida</h3>
-                        <p className="text-xs text-amber-700 mb-3">El arqueo de caja y reportes están reservados exclusivamente para el Profesor Encargado.</p>
-                        <button onClick={() => {
-                          const pinCheck = prompt('Ingresa el PIN de Profesor para ver el arqueo:');
-                          if (pinCheck) {
-                            const gradeDocId = `${session.schoolId}__${session.gradeId}`;
-                            db.collection('grados_cantina').doc(gradeDocId).get().then(doc => {
-                              if (doc.exists && doc.data().profesorPin === pinCheck) {
-                                setSession({ ...session, role: 'profesor' });
-                                alert('¡Acceso concedido como Profesor!');
-                              } else {
-                                alert('PIN de profesor incorrecto.');
-                              }
-                            });
-                          }
-                        }} className="bg-amber-600 text-white font-bold text-xs px-4 py-2 rounded-lg">
-                          Ingresar PIN de Profesor
-                        </button>
+                        <p className="text-xs text-amber-700 mb-3">El arqueo de caja está reservado exclusivamente para el Profesor.</p>
                       </div>
                     ) : (
                       <div className="bg-white border rounded-xl p-4 shadow-sm">
@@ -1171,7 +1142,7 @@
                         </div>
 
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center mb-4">
-                          <span className="text-xs text-blue-600 uppercase font-semibold">Total Recaudado en el Grado</span>
+                          <span className="text-xs text-blue-600 uppercase font-semibold">Total Recaudado</span>
                           <div className="text-2xl font-bold text-blue-700">₲ {totalClosingSales.toLocaleString()}</div>
                           <span className="text-xs text-gray-500">{closingOrders.length} ventas válidas</span>
                         </div>
@@ -1203,7 +1174,7 @@
                   <div>
                     {isProfessor && (
                       <form onSubmit={handleSaveProduct} className="bg-white border rounded-xl p-3 shadow-sm mb-4 text-xs space-y-2">
-                        <h3 className="font-bold text-sm text-gray-800">{editingProduct ? 'Editar Producto' : 'Nuevo Producto en el Grado'}</h3>
+                        <h3 className="font-bold text-sm text-gray-800">{editingProduct ? 'Editar Producto' : 'Nuevo Producto'}</h3>
                         <div>
                           <label className="text-gray-600 block">Nombre:</label>
                           <input type="text" required value={productForm.name} onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} className="w-full border rounded p-1.5 mt-0.5" />
@@ -1257,7 +1228,7 @@
                               {isProfessor && (
                                 <>
                                   <button onClick={() => { setDeductModalProd(p); setStockToDeduct(''); }} className="bg-amber-600 text-white px-2 py-0.5 rounded font-semibold">
-                                    - Descontar consumo
+                                    - Descontar
                                   </button>
                                   <div className="flex gap-1 mt-0.5">
                                     <button onClick={() => startEditProduct(p)} className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-semibold">Editar</button>
@@ -1270,6 +1241,20 @@
                         );
                       })}
                     </div>
+                  </div>
+                )}
+
+                {/* 5. IMPRESIÓN DE QR DEL COLEGIO (Solo Profesor) */}
+                {isProfessor && activeTab === 'qr' && (
+                  <div className="bg-white border rounded-xl p-5 text-center shadow-sm">
+                    <h3 className="font-bold text-base text-gray-800 mb-1">QR de Acceso al Colegio</h3>
+                    <p className="text-xs text-gray-500 mb-4">Imprime este código QR y colócalo en el evento. Al escanearlo, el público accederá automáticamente a la cantina de este curso sin configurar nada.</p>
+                    <div className="flex justify-center mb-4 bg-gray-50 p-4 rounded-xl border">
+                      <div id="school-qrcode"></div>
+                    </div>
+                    <button onClick={() => window.print()} className="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs">
+                      🖨️ Imprimir Código QR del Colegio
+                    </button>
                   </div>
                 )}
               </>
@@ -1379,8 +1364,6 @@
               </div>
             </div>
           )}
-
-          <GuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
         </div>
       );
     }
