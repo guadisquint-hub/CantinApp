@@ -184,8 +184,6 @@
       const [loginError, setLoginError] = useState('');
       const [isLoggingIn, setIsLoggingIn] = useState(false);
       const [isGuideOpen, setIsGuideOpen] = useState(false);
-
-      // Estado para alternar la vista de staff (login de curso) desde la portada para el público
       const [showStaffLogin, setShowStaffLogin] = useState(false);
 
       const [products, setProducts] = useState([]);
@@ -293,6 +291,42 @@
         }
       }, [activeOrder]);
 
+      const handleViewerLogin = async () => {
+        setIsLoggingIn(true);
+        const cleanSchool = 'colegio';
+        const cleanGrade = 'general';
+        const gradeDocId = `${cleanSchool}__${cleanGrade}`;
+        const gradeRef = db.collection('grados_cantina').doc(gradeDocId);
+
+        try {
+          const docSnap = await gradeRef.get();
+          if (!docSnap.exists) {
+            await gradeRef.set({
+              schoolName: 'Colegio',
+              gradeName: 'General',
+              profesorPin: '1234',
+              cajaPin: '1234',
+              createdAt: Date.now()
+            });
+          }
+          const newSession = {
+            schoolId: cleanSchool,
+            schoolName: 'Cantina Escolar',
+            gradeId: cleanGrade,
+            gradeName: 'Menú General',
+            role: 'viewer'
+          };
+          localStorage.setItem('cantinapp_grade_session', JSON.stringify(newSession));
+          setSession(newSession);
+          setActiveTab('menu');
+        } catch (err) {
+          console.error(err);
+          alert('Error al cargar el menú.');
+        } finally {
+          setIsLoggingIn(false);
+        }
+      };
+
       const handleLogin = async (e) => {
         e.preventDefault();
         const cleanSchool = schoolInput.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
@@ -304,7 +338,7 @@
           return;
         }
 
-        if (accessMode !== 'viewer' && pin.length < 4) {
+        if (pin.length < 4) {
           setLoginError('El PIN debe tener al menos 4 dígitos.');
           return;
         }
@@ -317,25 +351,6 @@
           const gradeRef = db.collection('grados_cantina').doc(gradeDocId);
           const docSnap = await gradeRef.get();
 
-          if (accessMode === 'viewer') {
-            if (!docSnap.exists) {
-              setLoginError('Ese grado aún no ha sido creado.');
-              setIsLoggingIn(false);
-              return;
-            }
-            const newSession = {
-              schoolId: cleanSchool,
-              schoolName: docSnap.data().schoolName || schoolInput.trim(),
-              gradeId: cleanGrade,
-              gradeName: docSnap.data().gradeName || gradeInput.trim(),
-              role: 'viewer'
-            };
-            localStorage.setItem('cantinapp_grade_session', JSON.stringify(newSession));
-            setSession(newSession);
-            setActiveTab('menu');
-            return;
-          }
-
           if (docSnap.exists) {
             const data = docSnap.data();
             if (accessMode === 'profesor') {
@@ -346,7 +361,7 @@
               }
             } else {
               if (data.cajaPin !== pin) {
-                setLoginError('PIN de Caja / Alumnos incorrecto.');
+                setLoginError('PIN de Caja incorrecto.');
                 setIsLoggingIn(false);
                 return;
               }
@@ -383,7 +398,7 @@
       };
 
       const handleLogout = () => {
-        if (confirm('¿Deseas cerrar sesión en este grado?')) {
+        if (confirm('¿Deseas cerrar sesión?')) {
           localStorage.removeItem('cantinapp_grade_session');
           setSession(null);
           setProducts([]);
@@ -699,7 +714,7 @@
 
             <div className="text-center mb-6 mt-4">
               <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3 shadow-md">
-                🎓
+                🥟
               </div>
               <h1 className="text-2xl font-bold text-gray-800">CantinApp</h1>
               <p className="text-xs text-gray-500 mt-1">Sistema de Gestión para Cantinas Escolares</p>
@@ -708,10 +723,11 @@
             {!showStaffLogin ? (
               <div className="space-y-3">
                 <button
-                  onClick={() => { setAccessMode('viewer'); setSchoolInput('Colegio'); setGradeInput('Publico'); }}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-sm shadow transition flex items-center justify-center gap-2"
+                  onClick={handleViewerLogin}
+                  disabled={isLoggingIn}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-sm shadow transition flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  👀 Consultar Menú en Vivo
+                  {isLoggingIn ? 'Cargando menú...' : '👀 Consultar Menú en Vivo'}
                 </button>
 
                 <button
@@ -838,7 +854,7 @@
             <div className="flex justify-between items-center mb-2">
               <div>
                 <h1 className="text-base font-bold tracking-tight flex items-center gap-1.5">
-                  🎓 {session.gradeName}
+                  🥟 {session.gradeName}
                   <span className="inline-block w-2 h-2 rounded-full bg-emerald-300 animate-pulse" title="En vivo"></span>
                 </h1>
                 <div className="flex items-center gap-2 mt-0.5">
@@ -889,7 +905,7 @@
 
           <main className="flex-1 p-4 pb-36 overflow-y-auto">
             {isSyncing ? (
-              <div className="text-center py-12 text-gray-500 text-sm">Sincronizando grado en vivo...</div>
+              <div className="text-center py-12 text-gray-500 text-sm">Sincronizando menú en vivo...</div>
             ) : (
               <>
                 {/* 1. MENÚ Y COBRO */}
