@@ -1,1443 +1,1202 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CantinApp</title>
-  
-  <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#2563eb">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="CantinApp">
-  <link rel="icon" type="image/x-icon" href="./favicon.ico">
-  <link rel="shortcut icon" href="./favicon.ico">
-  <link rel="apple-touch-icon" href="./favicon.ico">
-
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- QRCode.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <!-- jsQR para leer códigos QR desde la cámara -->
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-  <!-- ExcelJS -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-  <!-- React y React DOM -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <!-- Babel -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyBe1LV62CNToESYwudcQkrvMWVlMNa4R84",
-      authDomain: "cantinapp-958f3.firebaseapp.com",
-      projectId: "cantinapp-958f3",
-      storageBucket: "cantinapp-958f3.firebasestorage.app",
-      messagingSenderId: "303292686085",
-      appId: "1:303292686085:web:d8ce0ed8d1c7c933cbe16c"
-    };
-
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.firestore();
-    db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
-      console.log('Persistencia Firestore:', err.code);
-    });
-
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
-          .then((reg) => {
-            reg.update();
-            setInterval(() => reg.update(), 5 * 60 * 1000);
-          })
-          .catch((err) => console.log('Error PWA:', err));
-
-        let refreshing = false;
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (refreshing) return;
-          refreshing = true;
-          window.location.reload();
-        });
-      });
-    }
-  </script>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#6d28d9" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/png" href="./icon-192.png" />
+  <title>PeluApp — Gestión & Control Tributario</title>
   <style>
+    :root {
+      --primary: #6d28d9;
+      --primary-dark: #5b21b6;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --success: #059669;
+      --danger: #dc2626;
+      --warning: #d97706;
+    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); padding-bottom: 70px; }
+    header {
+      background: var(--primary); color: white; padding: 14px 16px;
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+    header h1 { margin: 0; font-size: 1.15rem; display: flex; align-items: center; gap: 8px; }
+    .status-dot { width: 9px; height: 9px; border-radius: 50%; background: #fbbf24; display: inline-block; }
+    .status-dot.online { background: #34d399; }
+    .badge-sec { font-size: 0.75rem; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 12px; cursor: pointer; }
+    nav {
+      display: flex; background: var(--card); border-bottom: 1px solid var(--border);
+      overflow-x: auto; position: sticky; top: 50px; z-index: 9;
+    }
+    nav button {
+      flex: 1; padding: 12px 10px; border: none; background: none; font-weight: 600;
+      color: var(--muted); cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent;
+    }
+    nav button.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .container { max-width: 900px; margin: 16px auto; padding: 0 12px; }
+    .card {
+      background: var(--card); border-radius: 12px; padding: 16px;
+      border: 1px solid var(--border); margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    h2 { margin: 0 0 12px; font-size: 1.05rem; color: var(--primary-dark); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+    label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 4px; color: var(--muted); }
+    input, select, textarea {
+      width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 0.95rem; margin-bottom: 10px; background: white;
+    }
+    select:disabled { background: #f1f5f9; color: #64748b; cursor: not-allowed; border-style: dashed; }
+    .btn {
+      background: var(--primary); color: white; border: none; padding: 11px 16px;
+      border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; font-size: 0.95rem;
+    }
+    .btn:hover { background: var(--primary-dark); }
+    .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+    .btn-success { background: var(--success); }
+    .btn-warning { background: var(--warning); }
+    .btn-sm { padding: 6px 10px; font-size: 0.8rem; width: auto; border-radius: 6px; }
+    .btn-danger { background: var(--danger); }
+    .quick-bills { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+    .quick-bills button {
+      background: #ede9fe; color: var(--primary-dark); border: 1px solid #c4b5fd;
+      padding: 6px 10px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+    }
+    .vuelto-box {
+      background: #ecfdf5; border: 1px solid #a7f3d0; padding: 12px; border-radius: 8px;
+      margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .credito-aviso {
+      background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; padding: 10px 12px;
+      border-radius: 8px; font-size: 0.85rem; margin-bottom: 12px; font-weight: 500;
+    }
+    .service-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+    }
+    .service-item input[type="number"] { width: 115px; margin: 0; text-align: right; }
+    .invoice-guide {
+      background: #fffbeb; border: 2px dashed #f59e0b; border-radius: 10px; padding: 14px;
+      font-family: monospace; font-size: 0.88rem; margin-top: 12px;
+    }
+    .invoice-guide h3 { margin: 0 0 8px; color: #b45309; font-family: sans-serif; font-size: 0.95rem; }
+    .row-flex { display: flex; justify-content: space-between; margin: 4px 0; }
+    .hidden { display: none !important; }
+    .kpi-box { background: #f1f5f9; padding: 12px; border-radius: 8px; text-align: center; }
+    .kpi-box strong { display: block; font-size: 1.15rem; color: var(--primary); }
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); z-index: 100;
+      display: flex; align-items: center; justify-content: center; padding: 16px;
+    }
+    #login-screen { background: var(--bg); }
+    .modal-box {
+      background: white; padding: 24px; border-radius: 14px; width: 100%; max-width: 400px;
+      border: 1px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+    }
+    .list-item {
+      padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem;
+      display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .list-item.anulada { opacity: 0.72; background: #fef2f2; padding: 10px; border-radius: 8px; border: 1px solid #fecaca; margin-bottom: 6px; }
+    .audit-tag { font-size: 0.72rem; background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; }
+    .anulada-tag { font-size: 0.72rem; background: #fee2e2; color: #b91c1c; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+    .recibo-tag { font-size: 0.74rem; background: #e0e7ff; color: #3730a3; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-weight: 700; }
+    .factura-tag { font-size: 0.74rem; background: #f3e8ff; color: #6b21a8; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-weight: 700; }
+
     @media print {
       body * { visibility: hidden; }
-      #printable-area, #printable-area * { visibility: visible; }
-      #printable-area { position: absolute; left: 0; top: 0; width: 100%; }
+      #zona-impresion, #zona-impresion * { visibility: visible; }
+      #zona-impresion {
+        position: fixed; left: 0; top: 0; width: 100%; max-width: 80mm;
+        padding: 8px; font-family: monospace; font-size: 12px; color: #000; background: #fff;
+      }
       .no-print { display: none !important; }
     }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen font-sans text-gray-800">
-  <div id="root"></div>
+<body>
 
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+<!-- PANTALLA DE ACCESO -->
+<div id="login-screen" class="modal-overlay">
+  <div class="modal-box" style="text-align:center;">
+    <h1 style="color:var(--primary); margin-bottom:4px;">✂️ PeluApp</h1>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:18px;">Sistema Encriptado · IVA General PY</p>
+    <label style="text-align:left;">Perfil de Usuario</label>
+    <select id="login-role">
+      <option value="caja">Recepción / Caja</option>
+      <option value="admin">Dueño / Administración</option>
+    </select>
+    <label style="text-align:left;">PIN de Seguridad</label>
+    <input type="password" id="login-pin" inputmode="numeric" placeholder="••••" />
+    <button class="btn" id="btn-login">Ingresar al Sistema</button>
+    <p id="login-error" style="color:var(--danger); font-size:0.82rem; margin-top:8px;"></p>
+  </div>
+</div>
 
-    const INITIAL_PRODUCTS = [
-      { id: 'p1', name: 'Empanada de Carne', price: 5000, category: 'Comida', stock: 30, image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=300&q=80' },
-      { id: 'p2', name: 'Empanada de Queso', price: 4500, category: 'Comida', stock: 30, image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=300&q=80' },
-      { id: 'p3', name: 'Sándwich de Jamón y Queso', price: 8000, category: 'Comida', stock: 20, image: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=300&q=80' },
-      { id: 'p4', name: 'Gaseosa 500ml', price: 6000, category: 'Bebida', stock: 40, image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=300&q=80' },
-      { id: 'p5', name: 'Jugo Natural', price: 5000, category: 'Bebida', stock: 25, image: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=300&q=80' },
-      { id: 'p6', name: 'Agua Mineral 500ml', price: 3000, category: 'Bebida', stock: 40, image: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=300&q=80' },
-      { id: 'p7', name: 'Alfajor', price: 4000, category: 'Postre', stock: 35, image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?auto=format&fit=crop&w=300&q=80' },
-      { id: 'p8', name: 'Brownie', price: 5000, category: 'Postre', stock: 20, image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=300&q=80' }
-    ];
+<!-- MODAL ANULACIÓN / CORRECCIÓN CONTABLE DE FACTURA (EXCLUSIVO ADMIN) -->
+<div id="modal-anular-factura" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h2 style="margin-top:0; color:var(--danger);">🚫 Anulación / Corrección Contable</h2>
+    <p id="anul-modal-info" style="font-size:0.88rem; color:var(--text); margin-bottom:10px;"></p>
+    <label>Tipo de Comprobante Emitido</label>
+    <select id="anul-tipo-doc">
+      <option value="Preimpresa">Factura Preimpresa (Talonario Físico)</option>
+      <option value="Virtual / SIFEN">Factura Virtual / Electrónica (e-Kuatia)</option>
+    </select>
+    <label>N° de Factura a Anular (para Libro Ventas RG 90)</label>
+    <input type="text" id="anul-nro-factura" placeholder="Ej: 001-001-0000124" />
+    <label>Motivo Tributario de Anulación</label>
+    <select id="anul-motivo-select">
+      <option value="Error en RUC o Razón Social del cliente">Error en RUC o Razón Social del cliente</option>
+      <option value="Error en importe o servicio facturado">Error en importe o servicio facturado</option>
+      <option value="Error en condición de venta (Contado/Crédito)">Error en condición de venta (Contado/Crédito)</option>
+      <option value="Comprobante duplicado / Cancelación de servicio">Comprobante duplicado / Cancelación de servicio</option>
+      <option value="Otro motivo especificado">Otro motivo</option>
+    </select>
+    <input type="text" id="anul-detalle-extra" placeholder="Observación adicional (opcional)" />
+    <div class="credito-aviso" style="font-size:0.8rem; margin-bottom:12px;">
+      📋 <strong>Orden Contable:</strong> La factura quedará asentada como <strong>ANULADA (Gs. 0)</strong> en el Libro Ventas y se descontará del IVA Débito y del arqueo de caja sin borrar el historial.
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <button class="btn btn-warning" id="btn-anular-y-refacturar">✏️ Anular y Refacturar Datos Correctos</button>
+      <button class="btn btn-danger" id="btn-solo-anular">🚫 Solo Anular Definitivamente</button>
+      <button class="btn btn-outline" id="btn-cancelar-anul">Cancelar</button>
+    </div>
+  </div>
+</div>
 
-    // Componente Gráfico Profesional de la Empanada Dorada y Crocante
-    function EmpanadaLogo({ className = "w-12 h-12" }) {
-      return (
-        <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-          {/* Sombra suave */}
-          <ellipse cx="50" cy="85" rx="35" ry="6" fill="rgba(0,0,0,0.15)" />
-          {/* Cuerpo principal de la empanada (Forma de media luna dorada) */}
-          <path d="M15 65 C15 35, 40 15, 75 40 C90 52, 92 68, 80 78 C65 90, 30 90, 15 65 Z" fill="url(#gradEmpanada)" stroke="#b45309" strokeWidth="3" />
-          {/* Repulgue / Margen rizado superior */}
-          <path d="M15 65 C25 55, 38 48, 50 52 C62 56, 75 68, 80 78" stroke="#78350f" strokeWidth="4" strokeLinecap="round" fill="none" />
-          <path d="M22 61 C30 54, 40 48, 50 52 C60 56, 70 65, 75 73" stroke="#fde68a" strokeWidth="2" strokeLinecap="round" fill="none" />
-          {/* Gradiente dorado crocante */}
-          <defs>
-            <linearGradient id="gradEmpanada" x1="20" y1="20" x2="80" y2="90" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#fef08a" />
-              <stop offset="50%" stopColor="#f59e0b" />
-              <stop offset="100%" stopColor="#d97706" />
-            </linearGradient>
-          </defs>
-        </svg>
-      );
+<!-- MODAL COBRO DE DEUDA A CRÉDITO -->
+<div id="modal-cobrar-credito" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h2 style="margin-top:0;">💳 Cobrar Cuenta a Crédito</h2>
+    <p id="cred-modal-info" style="font-size:0.9rem; color:var(--text); margin-bottom:12px;"></p>
+    <label>¿Con qué medio abona el cliente hoy?</label>
+    <select id="cred-metodo-pago">
+      <option value="Efectivo">Efectivo (Gs.)</option>
+      <option value="Tarjeta Débito">Tarjeta de Débito</option>
+      <option value="Tarjeta Crédito">Tarjeta de Crédito</option>
+      <option value="Pago QR">Pago QR</option>
+      <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+    </select>
+    <div style="display:flex; gap:8px; margin-top:10px;">
+      <button class="btn btn-outline" id="btn-cancelar-cred">Cancelar</button>
+      <button class="btn btn-success" id="btn-confirmar-cred">Confirmar y Emitir Recibo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VISTA PREVIA / IMPRESIÓN DE RECIBO CORRELATIVO -->
+<div id="modal-recibo" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div id="zona-impresion" style="font-family:monospace; font-size:0.86rem; border:1px solid #cbd5e1; padding:12px; border-radius:8px; background:#fff;">
+      <div style="text-align:center; border-bottom:1px dashed #64748b; padding-bottom:8px; margin-bottom:8px;">
+        <strong style="font-size:1.05rem;">RECIBO DE DINERO</strong><br/>
+        <span style="font-size:1rem; font-weight:700;">N° <span id="rec-numero">00001</span></span><br/>
+        <span id="rec-salon-info" style="font-size:0.75rem;"></span>
+      </div>
+      <div class="row-flex"><span>Fecha:</span><strong id="rec-fecha"></strong></div>
+      <div class="row-flex"><span>Recibimos de:</span><strong id="rec-cliente"></strong></div>
+      <div class="row-flex"><span>RUC / C.I.:</span><strong id="rec-ruc"></strong></div>
+      <div class="row-flex"><span>Forma Pago:</span><strong id="rec-metodo"></strong></div>
+      <hr style="border-top:1px dashed #64748b;"/>
+      <div id="rec-concepto" style="margin:6px 0;"></div>
+      <hr style="border-top:1px dashed #64748b;"/>
+      <div class="row-flex" style="font-size:1rem;"><span>TOTAL ABONADO:</span><strong id="rec-total"></strong></div>
+      <div style="text-align:center; margin-top:16px; font-size:0.75rem; color:#475569;">
+        _________________________<br/>Firma / Sello Recepción
+      </div>
+    </div>
+    <div class="no-print" style="display:flex; gap:8px; margin-top:14px;">
+      <button class="btn btn-outline" id="btn-cerrar-recibo">Cerrar</button>
+      <button class="btn" onclick="window.print()">🖨️ Imprimir Recibo</button>
+    </div>
+  </div>
+</div>
+
+<header>
+  <h1><span class="status-dot" id="sync-dot"></span> ✂️ PeluApp</h1>
+  <span class="badge-sec" id="user-badge">🔒 Salir</span>
+</header>
+
+<nav>
+  <button class="active" data-tab="pos">1. Caja & Servicios</button>
+  <button id="nav-compras" data-tab="compras">2. Compras & IVA</button>
+  <button data-tab="cierre">3. Cierre & Créditos</button>
+  <button id="nav-config" data-tab="config">4. Impresión & Fiscal</button>
+</nav>
+
+<div class="container">
+
+  <section id="tab-pos">
+    <div id="banner-refacturacion" class="credito-aviso hidden">
+      ✏️ <strong>Refacturación en curso:</strong> Corregí el RUC, nombre, servicios o monto y registrá el nuevo comprobante válido.
+    </div>
+
+    <div class="card">
+      <h2>Datos del Cliente (Factura Legal)</h2>
+      <div class="grid-2">
+        <div>
+          <label>Nombre o Razón Social</label>
+          <input type="text" id="cli-nombre" list="clientes-datalist" placeholder="Ej: María González / Ocasional" />
+          <datalist id="clientes-datalist"></datalist>
+        </div>
+        <div>
+          <label>RUC o C.I. (con DV)</label>
+          <input type="text" id="cli-ruc" placeholder="Ej: 4521890-3 o X" />
+        </div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <label>Tipo de Factura a Emitir</label>
+          <select id="tipo-factura-pos">
+            <option value="Preimpresa">Factura Preimpresa (Talonario)</option>
+            <option value="Virtual / SIFEN">Factura Virtual / Electrónica</option>
+          </select>
+        </div>
+        <div>
+          <label>N° de Factura Legal (Opcional / Sugerido)</label>
+          <input type="text" id="nro-factura-pos" placeholder="Ej: 001-001-0000125" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Servicios Realizados (Precios Editables en Gs.)</h2>
+      <div id="lista-servicios"></div>
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        <input type="text" id="nuevo-srv-nombre" placeholder="Nuevo servicio (ej: Botóx capilar)" style="margin:0;" />
+        <input type="number" id="nuevo-srv-precio" placeholder="Gs." style="width:120px; margin:0;" />
+        <button class="btn" style="width:auto;" id="btn-add-srv">+ Agregar</button>
+      </div>
+      <div class="row-flex" style="margin-top:12px; padding-top:10px; border-top:1px solid var(--border); font-size:1.05rem;">
+        <span>Total Seleccionado:</span>
+        <strong id="pos-total-live" style="color:var(--primary);">Gs. 0</strong>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Condición y Forma de Pago</h2>
+      <div class="grid-2">
+        <div>
+          <label>Condición de Venta (Factura)</label>
+          <select id="condicion-venta">
+            <option value="Contado">Contado (Cobro en el momento)</option>
+            <option value="Crédito">Crédito (Cuenta Corriente)</option>
+          </select>
+        </div>
+        <div>
+          <label>Método de Pago</label>
+          <select id="metodo-pago">
+            <option value="Efectivo">Efectivo (Gs.)</option>
+            <option value="Tarjeta Débito">Tarjeta de Débito</option>
+            <option value="Tarjeta Crédito">Tarjeta de Crédito</option>
+            <option value="Pago QR">Pago QR</option>
+            <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+            <option value="Crédito Cliente" disabled>Crédito / Cuenta Corriente</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="aviso-credito-bloqueado" class="credito-aviso hidden">
+        🔒 <strong>Venta a Crédito activa:</strong> Se inhabilitaron los cobros al contado. Para habilitarlos nuevamente, cambiá la condición a <em>Contado</em>.
+      </div>
+
+      <div id="panel-efectivo">
+        <label>Efectivo Recibido del Cliente (Gs.)</label>
+        <input type="number" id="efectivo-recibido" placeholder="Ej: 300000" />
+        <div class="quick-bills">
+          <button type="button" data-bill="50000">+50.000</button>
+          <button type="button" data-bill="100000">100.000</button>
+          <button type="button" data-bill="200000">200.000</button>
+          <button type="button" data-bill="300000">300.000</button>
+          <button type="button" id="btn-monto-exacto">Monto Exacto</button>
+        </div>
+        <div class="vuelto-box">
+          <span style="font-weight:600; color:#065f46;">💵 Vuelto a Entregar:</span>
+          <strong id="vuelto-calculado" style="font-size:1.2rem; color:#059669;">Gs. 0</strong>
+        </div>
+      </div>
+
+      <button class="btn" id="btn-venta">Registrar Operación y Generar Comprobante</button>
+    </div>
+
+    <div id="guia-factura" class="invoice-guide hidden">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:6px; flex-wrap:wrap;">
+        <h3 style="margin:0;">📋 Guía para Factura Legal</h3>
+        <button id="btn-ver-recibo-venta" class="btn btn-sm hidden">🖨️ Recibo N° <span id="gf-nro-recibo"></span></button>
+      </div>
+      <div class="row-flex"><span>Factura N° / Tipo:</span><strong id="gf-factura-nro"></strong></div>
+      <div class="row-flex"><span>Fecha:</span><strong id="gf-fecha"></strong></div>
+      <div class="row-flex"><span>Condición:</span><strong id="gf-condicion"></strong></div>
+      <div class="row-flex"><span>Método Cobro:</span><strong id="gf-metodo"></strong></div>
+      <div class="row-flex"><span>RUC / CI:</span><strong id="gf-ruc"></strong></div>
+      <div class="row-flex"><span>Nombre / Razón Social:</span><strong id="gf-nombre"></strong></div>
+      <hr />
+      <div id="gf-detalle"></div>
+      <hr />
+      <div class="row-flex"><span>SUBTOTAL GRAVADAS 10%:</span><strong id="gf-grav10"></strong></div>
+      <div class="row-flex"><span>TOTAL A PAGAR (GS.):</span><strong id="gf-total"></strong></div>
+      <div class="row-flex" style="color:#059669;"><span>LIQUIDACIÓN DEL IVA (10%):</span><strong id="gf-iva10"></strong></div>
+      <div id="gf-vuelto-row" class="row-flex hidden" style="color:#0369a1;"><span>EFECTIVO / VUELTO:</span><strong id="gf-vuelto"></strong></div>
+    </div>
+  </section>
+
+  <section id="tab-compras" class="hidden">
+    <div class="card">
+      <h2>Registrar Compra / Gasto (Proveedores)</h2>
+      <div class="grid-2">
+        <div>
+          <label>Proveedor y RUC</label>
+          <input type="text" id="comp-prov" placeholder="Ej: Distribuidora Capilar - 80012345-6" />
+        </div>
+        <div>
+          <label>N° Factura Legal</label>
+          <input type="text" id="comp-nro" placeholder="Ej: 001-001-0004521" />
+        </div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <label>Categoría del Gasto (Legislación PY)</label>
+          <select id="comp-tipo">
+            <option value="insumos">Insumos directos (Shampoo, tinturas, oxidantes)</option>
+            <option value="servicios_basicos">Servicios básicos / Alquiler (ANDE, ESSAP, Local)</option>
+            <option value="admin">Gastos administrativos (Internet, teléfono, contabilidad)</option>
+            <option value="equipamiento">Equipamiento / Herramientas (Secadores, sillones)</option>
+            <option value="no_deducible">Compra menor sin factura legal (No deducible)</option>
+          </select>
+        </div>
+        <div>
+          <label>Condición de Compra</label>
+          <select id="comp-condicion">
+            <option value="Contado">Contado</option>
+            <option value="Crédito">Crédito (Cuentas a Pagar)</option>
+          </select>
+        </div>
+      </div>
+      <p id="cuenta-sugerida" style="font-size:0.85rem; color:var(--primary); font-weight:600; margin:4px 0 10px;">
+        Cuenta Contable: 5.1.01 - Costo Directo de Servicios (Crédito Fiscal 10%)
+      </p>
+      <div class="grid-2">
+        <div>
+          <label>Monto Total Factura (IVA Incluido Gs.)</label>
+          <input type="number" id="comp-monto" placeholder="Ej: 550000" />
+        </div>
+        <div>
+          <label>Tasa de IVA Aplicada</label>
+          <select id="comp-tasa">
+            <option value="10">Gravada 10% (General)</option>
+            <option value="5">Gravada 5% (Alquiler / Productos 5%)</option>
+            <option value="0">Exenta / No Deducible (0%)</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn" id="btn-compra">Guardar Compra y Actualizar IVA</button>
+    </div>
+
+    <div class="card">
+      <h2>Posición Mensual IVA (Formulario 120 - DNIT)</h2>
+      <div class="grid-2">
+        <div class="kpi-box">
+          <span>IVA Débito Fiscal (Ventas Válidas)</span>
+          <strong id="kpi-debito">Gs. 0</strong>
+        </div>
+        <div class="kpi-box">
+          <span>IVA Crédito Fiscal (Compras)</span>
+          <strong id="kpi-credito" style="color:var(--success);">Gs. 0</strong>
+        </div>
+      </div>
+      <div class="kpi-box" style="margin-top:10px; background:#ede9fe;">
+        <span>Saldo Estimado (A Pagar / A Favor)</span>
+        <strong id="kpi-saldo">Gs. 0</strong>
+      </div>
+      <button class="btn btn-outline" style="margin-top:12px;" id="btn-exportar">
+        📥 Exportar Libro Compra-Venta RG 90 (Con Anuladas)
+      </button>
+    </div>
+  </section>
+
+  <section id="tab-cierre" class="hidden">
+    <div class="card">
+      <h2>Arqueo y Cierre de Caja del Día (Ventas Vigentes)</h2>
+      <div id="resumen-caja"></div>
+      <hr />
+      <label>Registrar Depósito de Valores / Rendición</label>
+      <div class="grid-2">
+        <input type="number" id="dep-monto" placeholder="Monto depositado (Gs.)" />
+        <input type="text" id="dep-ref" placeholder="Banco / N° Boleta o Referencia" />
+      </div>
+      <button class="btn btn-outline" id="btn-deposito">Registrar Depósito de Efectivo</button>
+      <p id="estado-depositos" style="font-size:0.88rem; margin-top:10px; color:var(--muted);"></p>
+    </div>
+
+    <div class="card">
+      <h2>Créditos / Cuentas Corrientes Pendientes</h2>
+      <div id="lista-creditos"></div>
+    </div>
+
+    <div class="card">
+      <h2>Libro de Ventas, Recibos y Anulaciones Contables</h2>
+      <p id="aviso-rol-historial" style="font-size:0.82rem; color:var(--muted); margin-top:0;"></p>
+      <div id="lista-ventas-historial"></div>
+    </div>
+  </section>
+
+  <section id="tab-config" class="hidden">
+    <div class="card">
+      <h2>Numeración de Facturas, Recibos e Impresora</h2>
+      <div class="grid-2">
+        <div>
+          <label>Nombre del Salón (Encabezado Recibo)</label>
+          <input type="text" id="cfg-salon" placeholder="Ej: Salón de Belleza & Spa" />
+        </div>
+        <div>
+          <label>Próximo N° de Recibo Correlativo</label>
+          <input type="number" id="cfg-next-recibo" value="1" min="1" />
+        </div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <label>Timbrado Vigente</label>
+          <input type="text" id="cfg-timbrado" placeholder="Ej: 16845210" />
+        </div>
+        <div>
+          <label>Punto de Expedición</label>
+          <input type="text" id="cfg-exp" value="001-001" />
+        </div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <label>Próximo N° Secuencial de Factura</label>
+          <input type="number" id="cfg-next-factura" value="1" min="1" />
+        </div>
+        <div>
+          <label>Modo de Emisión Predeterminado</label>
+          <select id="cfg-modo">
+            <option value="Preimpresa">Factura Preimpresa (Talonario)</option>
+            <option value="Virtual / SIFEN">Factura Virtual / Electrónica (SIFEN)</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn" id="btn-save-cfg">Guardar Parámetros Fiscales y Numeración</button>
+    </div>
+  </section>
+
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC6wnqqVyCHU0rYVzEFmn_aVcT_rYZd6pk",
+    authDomain: "peluapp-py.firebaseapp.com",
+    projectId: "peluapp-py",
+    storageBucket: "peluapp-py.firebasestorage.app",
+    messagingSenderId: "51903163969",
+    appId: "1:51903163969:web:0d9f9c64ac456efe8060c0"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const STATE_REF = doc(db, "peluapp_data", "salon_principal");
+
+  const SECRET_SEED = "PeluApp-PY-2026-DNIT-Shield";
+  async function getCryptoKey() {
+    const enc = new TextEncoder();
+    const baseKey = await crypto.subtle.importKey("raw", enc.encode(SECRET_SEED), "PBKDF2", false, ["deriveKey"]);
+    return crypto.subtle.deriveKey(
+      { name: "PBKDF2", salt: enc.encode("peluapp-salt"), iterations: 100000, hash: "SHA-256" },
+      baseKey, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+    );
+  }
+
+  async function encryptPayload(obj) {
+    const key = await getCryptoKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encoded = new TextEncoder().encode(JSON.stringify(obj));
+    const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
+    return {
+      iv: btoa(String.fromCharCode(...iv)),
+      data: btoa(String.fromCharCode(...new Uint8Array(cipher)))
+    };
+  }
+
+  async function decryptPayload(payload) {
+    const key = await getCryptoKey();
+    const iv = Uint8Array.from(atob(payload.iv), c => c.charCodeAt(0));
+    const data = Uint8Array.from(atob(payload.data), c => c.charCodeAt(0));
+    const dec = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
+    return JSON.parse(new TextDecoder().decode(dec));
+  }
+
+  let state = {
+    servicios: [
+      { id: 1, nombre: "Corte Dama / Caballero", precio: 60000 },
+      { id: 2, nombre: "Brushing / Modelado", precio: 50000 },
+      { id: 3, nombre: "Coloración / Tinte completo", precio: 180000 },
+      { id: 4, nombre: "Nutrición / Baño de Crema", precio: 80000 },
+      { id: 5, nombre: "Manicura y Esmaltado", precio: 45000 }
+    ],
+    clientes: [],
+    ventas: [],
+    recibos: [],
+    compras: [],
+    depositos: [],
+    ultimoRecibo: 0,
+    ultimaFactura: 0,
+    config: { salon: "Salón de Belleza", modo: "Preimpresa", timbrado: "", exp: "001-001" }
+  };
+  let seleccionados = new Set();
+  let rolActual = null;
+  let creditoEnCobroId = null;
+  let ventaEnAnulacionId = null;
+  let refacturaDeNro = null;
+
+  const fmt = (n) => "Gs. " + Math.round(n).toLocaleString("es-PY");
+  const padRecibo = (num) => String(num).padStart(5, "0");
+  const padFactura = (exp, num) => `${exp || "001-001"}-${String(num).padStart(7, "0")}`;
+
+  function sugerirSiguienteFactura() {
+    const sig = (Number(state.ultimaFactura) || 0) + 1;
+    document.getElementById("nro-factura-pos").value = padFactura(state.config?.exp, sig);
+    document.getElementById("tipo-factura-pos").value = state.config?.modo || "Preimpresa";
+  }
+
+  function emitirNuevoRecibo({ fecha, cliente, ruc, metodo, concepto, total }) {
+    state.ultimoRecibo = (Number(state.ultimoRecibo) || 0) + 1;
+    const numeroFormateado = padRecibo(state.ultimoRecibo);
+    const recibo = { numero: numeroFormateado, fecha, cliente, ruc, metodo, concepto, total, anulado: false };
+    if (!state.recibos) state.recibos = [];
+    state.recibos.push(recibo);
+    return recibo;
+  }
+
+  window.abrirModalRecibo = (numero) => {
+    const r = (state.recibos || []).find(x => x.numero === numero);
+    if (!r) return;
+    document.getElementById("rec-numero").textContent = r.numero + (r.anulado ? " (ANULADO)" : "");
+    document.getElementById("rec-salon-info").textContent = state.config?.salon || "Salón de Belleza";
+    document.getElementById("rec-fecha").textContent = r.fecha;
+    document.getElementById("rec-cliente").textContent = r.cliente;
+    document.getElementById("rec-ruc").textContent = r.ruc;
+    document.getElementById("rec-metodo").textContent = r.metodo;
+    document.getElementById("rec-concepto").innerHTML = `<strong>Concepto:</strong><br/>${r.concepto}`;
+    document.getElementById("rec-total").textContent = r.anulado ? "Gs. 0 (ANULADO)" : fmt(r.total);
+    document.getElementById("modal-recibo").classList.remove("hidden");
+  };
+
+  document.getElementById("btn-cerrar-recibo").onclick = () => {
+    document.getElementById("modal-recibo").classList.add("hidden");
+  };
+
+  function getTotalSeleccionado() {
+    return state.servicios.filter(s => seleccionados.has(s.id)).reduce((acc, s) => acc + s.precio, 0);
+  }
+
+  function actualizarCalculoVuelto() {
+    const total = getTotalSeleccionado();
+    document.getElementById("pos-total-live").textContent = fmt(total);
+    const recibido = Number(document.getElementById("efectivo-recibido").value) || 0;
+    const vuelto = recibido > total ? recibido - total : 0;
+    document.getElementById("vuelto-calculado").textContent = fmt(vuelto);
+  }
+
+  function sincronizarCondicionYMetodo() {
+    const condicion = document.getElementById("condicion-venta").value;
+    const selMetodo = document.getElementById("metodo-pago");
+    const avisoCredito = document.getElementById("aviso-credito-bloqueado");
+    const panelEfectivo = document.getElementById("panel-efectivo");
+
+    if (condicion === "Crédito") {
+      Array.from(selMetodo.options).forEach(opt => { opt.disabled = opt.value !== "Crédito Cliente"; });
+      selMetodo.value = "Crédito Cliente";
+      selMetodo.disabled = true;
+      avisoCredito.classList.remove("hidden");
+      panelEfectivo.classList.add("hidden");
+    } else {
+      selMetodo.disabled = false;
+      Array.from(selMetodo.options).forEach(opt => { opt.disabled = opt.value === "Crédito Cliente"; });
+      if (selMetodo.value === "Crédito Cliente") selMetodo.value = "Efectivo";
+      avisoCredito.classList.add("hidden");
+      panelEfectivo.classList.toggle("hidden", selMetodo.value !== "Efectivo");
+    }
+    actualizarCalculoVuelto();
+  }
+
+  async function syncToCloud() {
+    try {
+      const encrypted = await encryptPayload(state);
+      await setDoc(STATE_REF, { ...encrypted, updatedAt: Date.now() });
+    } catch (e) {
+      console.error("Error guardando en nube:", e);
+    }
+  }
+
+  signInAnonymously(auth).then(() => {
+    document.getElementById("sync-dot").classList.add("online");
+    onSnapshot(STATE_REF, async (snap) => {
+      if (snap.exists() && snap.data().data) {
+        try {
+          state = await decryptPayload(snap.data());
+          if (!state.recibos) state.recibos = [];
+          renderAll();
+        } catch (err) {
+          console.error("Error descifrando datos:", err);
+        }
+      }
+    });
+  }).catch(() => {});
+
+  document.getElementById("btn-login").onclick = () => {
+    const rol = document.getElementById("login-role").value;
+    const pin = document.getElementById("login-pin").value;
+    const pines = { caja: "1234", admin: "9999" };
+    if (pin !== pines[rol]) {
+      document.getElementById("login-error").textContent = "PIN incorrecto.";
+      return;
+    }
+    rolActual = rol;
+    document.getElementById("login-screen").classList.add("hidden");
+    document.getElementById("user-badge").textContent = (rol === "admin" ? "👑 Admin" : "💇 Caja") + " · Salir";
+    document.getElementById("nav-compras").classList.toggle("hidden", rol !== "admin");
+    document.getElementById("nav-config").classList.toggle("hidden", rol !== "admin");
+    renderAll();
+  };
+
+  document.getElementById("user-badge").onclick = () => {
+    rolActual = null;
+    document.getElementById("login-pin").value = "";
+    document.getElementById("login-screen").classList.remove("hidden");
+  };
+
+  document.getElementById("condicion-venta").onchange = sincronizarCondicionYMetodo;
+  document.getElementById("metodo-pago").onchange = () => {
+    const esEfectivo = document.getElementById("metodo-pago").value === "Efectivo";
+    document.getElementById("panel-efectivo").classList.toggle("hidden", !esEfectivo);
+    actualizarCalculoVuelto();
+  };
+
+  document.getElementById("efectivo-recibido").oninput = actualizarCalculoVuelto;
+
+  document.querySelectorAll(".quick-bills button[data-bill]").forEach(btn => {
+    btn.onclick = () => {
+      const val = Number(btn.dataset.bill);
+      const actual = Number(document.getElementById("efectivo-recibido").value) || 0;
+      document.getElementById("efectivo-recibido").value = val === 50000 ? actual + 50000 : val;
+      actualizarCalculoVuelto();
+    };
+  });
+
+  document.getElementById("btn-monto-exacto").onclick = () => {
+    document.getElementById("efectivo-recibido").value = getTotalSeleccionado();
+    actualizarCalculoVuelto();
+  };
+
+  document.getElementById("cli-nombre").addEventListener("input", (e) => {
+    const found = state.clientes.find(c => c.nombre.toLowerCase() === e.target.value.toLowerCase());
+    if (found) document.getElementById("cli-ruc").value = found.ruc;
+  });
+
+  function renderServicios() {
+    const cont = document.getElementById("lista-servicios");
+    cont.innerHTML = state.servicios.map((s, idx) => `
+      <div class="service-item">
+        <label style="margin:0; display:flex; align-items:center; gap:8px; color:var(--text); cursor:pointer;">
+          <input type="checkbox" data-id="${s.id}" style="width:auto; margin:0;" ${seleccionados.has(s.id) ? "checked" : ""} />
+          ${s.nombre}
+        </label>
+        <input type="number" data-idx="${idx}" value="${s.precio}" />
+      </div>
+    `).join("");
+
+    cont.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+      chk.onchange = () => {
+        const id = Number(chk.dataset.id);
+        chk.checked ? seleccionados.add(id) : seleccionados.delete(id);
+        actualizarCalculoVuelto();
+      };
+    });
+    cont.querySelectorAll('input[type="number"]').forEach(inp => {
+      inp.onchange = async () => {
+        state.servicios[Number(inp.dataset.idx)].precio = Number(inp.value);
+        actualizarCalculoVuelto();
+        await syncToCloud();
+      };
+    });
+    actualizarCalculoVuelto();
+  }
+
+  document.getElementById("btn-add-srv").onclick = async () => {
+    const nombre = document.getElementById("nuevo-srv-nombre").value.trim();
+    const precio = Number(document.getElementById("nuevo-srv-precio").value);
+    if (!nombre || precio <= 0) return;
+    const id = Date.now();
+    state.servicios.push({ id, nombre, precio });
+    seleccionados.add(id);
+    document.getElementById("nuevo-srv-nombre").value = "";
+    document.getElementById("nuevo-srv-precio").value = "";
+    renderServicios();
+    await syncToCloud();
+  };
+
+  document.getElementById("btn-venta").onclick = async () => {
+    const elegidos = state.servicios.filter(s => seleccionados.has(s.id));
+    if (elegidos.length === 0) return alert("Seleccioná al menos un servicio.");
+
+    const nombreInput = document.getElementById("cli-nombre").value.trim();
+    const condicion = document.getElementById("condicion-venta").value;
+    const metodo = condicion === "Crédito" ? "Crédito Cliente" : document.getElementById("metodo-pago").value;
+
+    if (condicion === "Crédito" && !nombreInput) {
+      return alert("Para ventas a Crédito es obligatorio ingresar el Nombre del Cliente.");
     }
 
-    function App() {
-      useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const colParam = params.get('colegio');
-        const gradParam = params.get('grado');
-        if (colParam && gradParam) {
-          const autoSession = {
-            schoolId: colParam.toLowerCase(),
-            schoolName: colParam.toUpperCase(),
-            gradeId: gradParam.toLowerCase(),
-            gradeName: gradParam.toUpperCase(),
-            role: 'viewer'
-          };
-          localStorage.setItem('cantinapp_grade_session', JSON.stringify(autoSession));
-          setSession(autoSession);
-        }
-      }, []);
+    const nombre = nombreInput || "Cliente Ocasional";
+    const ruc = document.getElementById("cli-ruc").value.trim() || "X";
+    const tipoFactura = document.getElementById("tipo-factura-pos").value;
+    const nroFactura = document.getElementById("nro-factura-pos").value.trim() || padFactura(state.config?.exp, (Number(state.ultimaFactura) || 0) + 1);
+    const total = elegidos.reduce((acc, s) => acc + s.precio, 0);
+    const recibido = metodo === "Efectivo" ? (Number(document.getElementById("efectivo-recibido").value) || total) : total;
 
-      const [session, setSession] = useState(() => {
-        const saved = localStorage.getItem('cantinapp_grade_session');
-        return saved ? JSON.parse(saved) : null;
+    if (metodo === "Efectivo" && recibido < total) {
+      return alert("El efectivo recibido es menor al total del servicio.");
+    }
+
+    const vuelto = metodo === "Efectivo" ? recibido - total : 0;
+    const iva10 = total / 11;
+    const fecha = new Date().toLocaleDateString("es-PY");
+
+    // Avanza correlativo de factura si coincide con el último número
+    const partes = nroFactura.split("-");
+    const seqNum = Number(partes[partes.length - 1]);
+    if (!isNaN(seqNum) && seqNum > (Number(state.ultimaFactura) || 0)) {
+      state.ultimaFactura = seqNum;
+    }
+
+    if (nombre !== "Cliente Ocasional" && !state.clientes.some(c => c.nombre.toLowerCase() === nombre.toLowerCase())) {
+      state.clientes.push({ nombre, ruc });
+    }
+
+    let reciboGenerado = null;
+    if (condicion === "Contado") {
+      reciboGenerado = emitirNuevoRecibo({
+        fecha,
+        cliente: nombre,
+        ruc,
+        metodo,
+        concepto: `Fact. ${nroFactura}: ` + elegidos.map(i => `${i.nombre} (${fmt(i.precio)})`).join(", "),
+        total
       });
-
-      const [portalMode, setPortalMode] = useState('publico');
-      const [staffRole, setStaffRole] = useState('caja');
-      const [schoolInput, setSchoolInput] = useState('');
-      const [gradeInput, setGradeInput] = useState('');
-      const [inputPin, setInputPin] = useState('');
-      const [loginError, setLoginError] = useState('');
-      const [isLoggingIn, setIsLoggingIn] = useState(false);
-
-      // Estados para el lector de QR con cámara
-      const [isScanning, setIsScanning] = useState(false);
-      const [scanError, setScanError] = useState('');
-      const videoRef = useRef(null);
-      const canvasRef = useRef(null);
-      const [streamInstance, setStreamInstance] = useState(null);
-
-      const [products, setProducts] = useState([]);
-      const [orders, setOrders] = useState([]);
-      const [isSyncing, setIsSyncing] = useState(true);
-      const [syncError, setSyncError] = useState('');
-
-      const [cart, setCart] = useState([]);
-      const [activeRegister, setActiveRegister] = useState(() => localStorage.getItem('app_register') || 'Caja 1');
-
-      const [activeTab, setActiveTab] = useState('menu');
-      const [selectedCategory, setSelectedCategory] = useState('Todas');
-      const [searchQuery, setSearchQuery] = useState('');
-      const [deliverySearch, setDeliverySearch] = useState('');
-      const [activeOrder, setActiveOrder] = useState(null);
-      const [paymentMethod, setPaymentMethod] = useState('Efectivo');
-      const [cashReceived, setCashReceived] = useState('');
-
-      const [closingDate, setClosingDate] = useState(() => new Date().toISOString().split('T')[0]);
-      const [closingRegister, setClosingRegister] = useState('Todas');
-      const [isExporting, setIsExporting] = useState(false);
-
-      const [editingProduct, setEditingProduct] = useState(null);
-      const [productForm, setProductForm] = useState({ name: '', price: '', category: 'Comida', stock: '', image: '' });
-      const [stockModalProd, setStockModalProd] = useState(null);
-      const [stockToAdd, setStockToAdd] = useState('');
-
-      const [deductModalProd, setDeductModalProd] = useState(null);
-      const [stockToDeduct, setStockToDeduct] = useState('');
-
-      const isProfessor = session?.role === 'profesor';
-      const isStaff = session?.role === 'profesor' || session?.role === 'caja';
-
-      useEffect(() => {
-        localStorage.setItem('app_register', activeRegister);
-      }, [activeRegister]);
-
-      useEffect(() => {
-        if (!session) return;
-
-        setIsSyncing(true);
-        setSyncError('');
-        const gradeDocId = `${session.schoolId}__${session.gradeId}`;
-        const gradeRef = db.collection('grados_cantina').doc(gradeDocId);
-
-        const unsubProducts = gradeRef.collection('productos').onSnapshot(
-          async (snapshot) => {
-            if (snapshot.empty && session.role !== 'viewer') {
-              const batch = db.batch();
-              INITIAL_PRODUCTS.forEach(p => {
-                batch.set(gradeRef.collection('productos').doc(p.id), {
-                  ...p,
-                  stock: typeof p.stock === 'number' ? p.stock : 20
-                });
-              });
-              await batch.commit();
-            } else {
-              const list = snapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                  id: doc.id,
-                  ...data,
-                  stock: typeof data.stock === 'number' ? data.stock : 0
-                };
-              });
-              setProducts(list);
-            }
-            setIsSyncing(false);
-          },
-          (err) => {
-            console.error('Error productos:', err);
-            setSyncError('Sin conexión o permisos en Firebase.');
-            setIsSyncing(false);
-          }
-        );
-
-        let unsubOrders = () => {};
-        if (session.role !== 'viewer') {
-          unsubOrders = gradeRef.collection('pedidos')
-            .orderBy('createdAt', 'desc')
-            .onSnapshot(
-              (snapshot) => {
-                const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setOrders(list);
-              },
-              (err) => {
-                console.error('Error pedidos:', err);
-              }
-            );
-        }
-
-        return () => {
-          unsubProducts();
-          unsubOrders();
-        };
-      }, [session]);
-
-      useEffect(() => {
-        if (activeOrder) {
-          const qrContainer = document.getElementById('qrcode');
-          if (qrContainer) {
-            qrContainer.innerHTML = '';
-            new QRCode(qrContainer, { text: activeOrder.id, width: 150, height: 150 });
-          }
-        }
-      }, [activeOrder]);
-
-      useEffect(() => {
-        if (session && isProfessor) {
-          const qrSchoolContainer = document.getElementById('school-qrcode');
-          if (qrSchoolContainer) {
-            qrSchoolContainer.innerHTML = '';
-            const currentUrl = window.location.origin + window.location.pathname + `?colegio=${session.schoolId}&grado=${session.gradeId}`;
-            new QRCode(qrSchoolContainer, { text: currentUrl, width: 140, height: 140 });
-          }
-        }
-      }, [session, isProfessor, activeTab]);
-
-      // Lógica de escaneo de QR con la cámara
-      useEffect(() => {
-        let animationFrameId;
-        if (isScanning) {
-          navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-            .then((stream) => {
-              setStreamInstance(stream);
-              if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-                videoRef.current.setAttribute('playsinline', true);
-                videoRef.current.play();
-                requestAnimationFrame(tick);
-              }
-            })
-            .catch((err) => {
-              console.error(err);
-              setScanError('No se pudo acceder a la cámara. Verifica los permisos.');
-              setIsScanning(false);
-            });
-        }
-
-        function tick() {
-          if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
-            const canvas = canvasRef.current;
-            if (canvas) {
-              const ctx = canvas.getContext('2d');
-              canvas.height = videoRef.current.videoHeight;
-              canvas.width = videoRef.current.videoWidth;
-              ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-              const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                inversionAttempts: 'dontInvert',
-              });
-
-              if (code) {
-                handleScannedUrl(code.data);
-                return;
-              }
-            }
-          }
-          if (isScanning) {
-            animationFrameId = requestAnimationFrame(tick);
-          }
-        }
-
-        return () => {
-          if (streamInstance) {
-            streamInstance.getTracks().forEach(track => track.stop());
-          }
-          cancelAnimationFrame(animationFrameId);
-        };
-      }, [isScanning]);
-
-      const stopCamera = () => {
-        if (streamInstance) {
-          streamInstance.getTracks().forEach(track => track.stop());
-          setStreamInstance(null);
-        }
-        setIsScanning(false);
-      };
-
-      const handleScannedUrl = (urlText) => {
-        stopCamera();
-        try {
-          const url = new URL(urlText);
-          const col = url.searchParams.get('colegio');
-          const grad = url.searchParams.get('grado');
-          if (col && grad) {
-            const autoSession = {
-              schoolId: col.toLowerCase(),
-              schoolName: col.toUpperCase(),
-              gradeId: grad.toLowerCase(),
-              gradeName: grad.toUpperCase(),
-              role: 'viewer'
-            };
-            localStorage.setItem('cantinapp_grade_session', JSON.stringify(autoSession));
-            setSession(autoSession);
-          } else {
-            alert('El código QR escaneado no pertenece a un evento válido de CantinApp.');
-          }
-        } catch (e) {
-          alert('Código QR no reconocido: ' + urlText);
-        }
-      };
-
-      const handleStaffLogin = async (e) => {
-        e.preventDefault();
-        const cleanSchool = schoolInput.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
-        const cleanGrade = gradeInput.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
-        const pin = inputPin.trim();
-
-        if (!cleanSchool || !cleanGrade) {
-          setLoginError('Ingresa el nombre del Colegio y el Grado / Curso.');
-          return;
-        }
-
-        if (pin.length < 4) {
-          setLoginError('El PIN debe tener al menos 4 dígitos.');
-          return;
-        }
-
-        setIsLoggingIn(true);
-        setLoginError('');
-
-        try {
-          const gradeDocId = `${cleanSchool}__${cleanGrade}`;
-          const gradeRef = db.collection('grados_cantina').doc(gradeDocId);
-          const docSnap = await gradeRef.get();
-
-          if (docSnap.exists) {
-            const data = docSnap.data();
-            if (staffRole === 'profesor') {
-              if (data.profesorPin !== pin) {
-                setLoginError('PIN de Profesor incorrecto.');
-                setIsLoggingIn(false);
-                return;
-              }
-            } else {
-              if (data.cajaPin !== pin) {
-                setLoginError('PIN de Caja incorrecto.');
-                setIsLoggingIn(false);
-                return;
-              }
-            }
-          } else {
-            await gradeRef.set({
-              schoolName: schoolInput.trim(),
-              gradeName: gradeInput.trim(),
-              profesorPin: staffRole === 'profesor' ? pin : '1234',
-              cajaPin: staffRole === 'caja' ? pin : '1234',
-              createdAt: Date.now()
-            });
-          }
-
-          const gradeDoc = await gradeRef.get();
-          const gradeData = gradeDoc.data();
-
-          const newSession = {
-            schoolId: cleanSchool,
-            schoolName: gradeData.schoolName || schoolInput.trim(),
-            gradeId: cleanGrade,
-            gradeName: gradeData.gradeName || gradeInput.trim(),
-            role: staffRole
-          };
-          localStorage.setItem('cantinapp_grade_session', JSON.stringify(newSession));
-          setSession(newSession);
-          if (staffRole === 'profesor') setActiveTab('closing');
-        } catch (err) {
-          console.error(err);
-          setLoginError('Error de conexión con Firebase.');
-        } finally {
-          setIsLoggingIn(false);
-        }
-      };
-
-      const handleLogout = () => {
-        if (confirm('¿Deseas salir de la sesión actual?')) {
-          stopCamera();
-          localStorage.removeItem('cantinapp_grade_session');
-          window.history.replaceState({}, document.title, window.location.pathname);
-          setSession(null);
-          setProducts([]);
-          setOrders([]);
-          setCart([]);
-        }
-      };
-
-      const categories = ['Todas', ...new Set(products.map(p => p.category))];
-
-      const addToCart = (product) => {
-        if (!isStaff) return;
-        const liveProd = products.find(p => p.id === product.id) || product;
-        const availableStock = liveProd.stock ?? 0;
-
-        if (availableStock <= 0) {
-          alert(`¡${product.name} está agotado!`);
-          return;
-        }
-
-        setCart(prev => {
-          const existing = prev.find(item => item.id === product.id);
-          const currentQty = existing ? existing.qty : 0;
-          if (currentQty + 1 > availableStock) {
-            alert(`Solo quedan ${availableStock} unidades disponibles de ${product.name}.`);
-            return prev;
-          }
-          if (existing) {
-            return prev.map(item => item.id === product.id ? { ...item, qty: item.qty + 1 } : item);
-          }
-          return [...prev, { ...product, qty: 1 }];
-        });
-      };
-
-      const updateQty = (id, delta) => {
-        if (!isStaff) return;
-        const liveProd = products.find(p => p.id === id);
-        const availableStock = liveProd ? (liveProd.stock ?? 0) : 999;
-
-        setCart(prev => prev.map(item => {
-          if (item.id === id) {
-            const newQty = item.qty + delta;
-            if (delta > 0 && newQty > availableStock) {
-              alert(`Stock máximo disponible: ${availableStock} unidades.`);
-              return item;
-            }
-            return newQty > 0 ? { ...item, qty: newQty } : null;
-          }
-          return item;
-        }).filter(Boolean));
-      };
-
-      const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-      const numericCash = Number(cashReceived) || 0;
-      const changeAmount = numericCash - cartTotal;
-
-      const handleCheckout = async () => {
-        if (!isStaff || cart.length === 0) return;
-
-        if (paymentMethod === 'Efectivo' && cashReceived !== '' && numericCash < cartTotal) {
-          alert(`El efectivo recibido (₲ ${numericCash.toLocaleString()}) es menor al total a cobrar (₲ ${cartTotal.toLocaleString()}).`);
-          return;
-        }
-
-        for (const item of cart) {
-          const liveProd = products.find(p => p.id === item.id);
-          if (liveProd && (liveProd.stock ?? 0) < item.qty) {
-            alert(`Stock insuficiente para ${item.name}. Quedan ${liveProd.stock ?? 0} unidades.`);
-            return;
-          }
-        }
-
-        const orderId = 'ORD-' + Math.floor(1000 + Math.random() * 9000);
-        const itemsToProcess = [...cart];
-        const hasCashDetails = paymentMethod === 'Efectivo' && cashReceived !== '' && numericCash >= cartTotal;
-
-        const newOrder = {
-          id: orderId,
-          date: new Date().toISOString().split('T')[0],
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          createdAt: Date.now(),
-          items: itemsToProcess,
-          total: cartTotal,
-          paymentMethod,
-          cashReceived: hasCashDetails ? numericCash : null,
-          changeGiven: hasCashDetails ? (numericCash - cartTotal) : null,
-          register: activeRegister,
-          status: 'Pendiente'
-        };
-
-        setActiveOrder(newOrder);
-        setCart([]);
-        setCashReceived('');
-
-        try {
-          const gradeDocId = `${session.schoolId}__${session.gradeId}`;
-          const gradeRef = db.collection('grados_cantina').doc(gradeDocId);
-          const batch = db.batch();
-
-          batch.set(gradeRef.collection('pedidos').doc(orderId), newOrder);
-
-          itemsToProcess.forEach(item => {
-            const prodRef = gradeRef.collection('productos').doc(item.id);
-            batch.update(prodRef, {
-              stock: firebase.firestore.FieldValue.increment(-item.qty)
-            });
-          });
-
-          await batch.commit();
-        } catch (err) {
-          console.error(err);
-          alert('Venta guardada localmente. Se sincronizará al volver la señal.');
-        }
-      };
-
-      const handleSaveProduct = async (e) => {
-        e.preventDefault();
-        if (!isProfessor || !productForm.name || !productForm.price) return;
-
-        const gradeDocId = `${session.schoolId}__${session.gradeId}`;
-        const gradeRef = db.collection('grados_cantina').doc(gradeDocId);
-        const prodId = editingProduct ? editingProduct.id : 'p_' + Date.now();
-        const parsedStock = productForm.stock === '' ? 0 : Math.max(0, Number(productForm.stock));
-
-        const prodData = {
-          id: prodId,
-          name: productForm.name,
-          price: Number(productForm.price),
-          category: productForm.category,
-          stock: parsedStock,
-          image: productForm.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80'
-        };
-
-        setEditingProduct(null);
-        setProductForm({ name: '', price: '', category: 'Comida', stock: '', image: '' });
-
-        try {
-          await gradeRef.collection('productos').doc(prodId).set(prodData);
-        } catch (err) {
-          alert('Error al guardar producto: ' + err.message);
-        }
-      };
-
-      const handleConfirmAddStock = async (e) => {
-        e.preventDefault();
-        if (!isStaff) return;
-        const qtyToAdd = Number(stockToAdd);
-        if (!stockModalProd || isNaN(qtyToAdd) || qtyToAdd === 0) return;
-
-        const targetProd = stockModalProd;
-        setStockModalProd(null);
-        setStockToAdd('');
-
-        try {
-          const gradeDocId = `${session.schoolId}__${session.gradeId}`;
-          await db.collection('grados_cantina').doc(gradeDocId)
-            .collection('productos').doc(targetProd.id)
-            .update({
-              stock: firebase.firestore.FieldValue.increment(qtyToAdd)
-            });
-        } catch (err) {
-          alert('Error al sumar stock: ' + err.message);
-        }
-      };
-
-      const handleConfirmDeductStock = async (e) => {
-        e.preventDefault();
-        if (!isProfessor) return;
-        const qtyToSub = Number(stockToDeduct);
-        if (!deductModalProd || isNaN(qtyToSub) || qtyToSub <= 0) return;
-
-        const targetProd = deductModalProd;
-        if ((targetProd.stock ?? 0) < qtyToSub) {
-          alert('No puedes descontar más de lo que hay en stock.');
-          return;
-        }
-
-        setDeductModalProd(null);
-        setStockToDeduct('');
-
-        try {
-          const gradeDocId = `${session.schoolId}__${session.gradeId}`;
-          await db.collection('grados_cantina').doc(gradeDocId)
-            .collection('productos').doc(targetProd.id)
-            .update({
-              stock: firebase.firestore.FieldValue.increment(-qtyToSub)
-            });
-        } catch (err) {
-          alert('Error al descontar stock: ' + err.message);
-        }
-      };
-
-      const startEditProduct = (prod) => {
-        if (!isProfessor) return;
-        setEditingProduct(prod);
-        setProductForm({
-          name: prod.name,
-          price: prod.price,
-          category: prod.category,
-          stock: prod.stock ?? 0,
-          image: prod.image
-        });
-      };
-
-      const deleteProduct = async (id) => {
-        if (!isProfessor) return;
-        if (confirm('¿Eliminar este producto de este grado?')) {
-          try {
-            const gradeDocId = `${session.schoolId}__${session.gradeId}`;
-            await db.collection('grados_cantina').doc(gradeDocId)
-              .collection('productos').doc(id).delete();
-          } catch (err) {
-            alert('Error al eliminar: ' + err.message);
-          }
-        }
-      };
-
-      const updateOrderStatus = async (order, newStatus) => {
-        if (!isStaff) return;
-        if (newStatus === 'Cancelado' && order.status !== 'Cancelado') {
-          if (!confirm(`¿Anular pedido ${order.id}? Se devolverán las unidades al stock.`)) return;
-        }
-
-        try {
-          const gradeDocId = `${session.schoolId}__${session.gradeId}`;
-          const gradeRef = db.collection('grados_cantina').doc(gradeDocId);
-          const batch = db.batch();
-
-          batch.update(gradeRef.collection('pedidos').doc(order.id), { status: newStatus });
-
-          if (newStatus === 'Cancelado' && order.status !== 'Cancelado') {
-            order.items.forEach(item => {
-              const prodRef = gradeRef.collection('productos').doc(item.id);
-              batch.update(prodRef, {
-                stock: firebase.firestore.FieldValue.increment(item.qty)
-              });
-            });
-          }
-
-          await batch.commit();
-        } catch (err) {
-          alert('Error al actualizar estado: ' + err.message);
-        }
-      };
-
-      const exportToExcel = async () => {
-        if (!isProfessor) return;
-        setIsExporting(true);
-        try {
-          const workbook = new ExcelJS.Workbook();
-          const thinBorder = {
-            top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-            left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-            right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
-          };
-
-          const s1 = workbook.addWorksheet('Ventas del Grado');
-          s1.mergeCells('A1:H1');
-          s1.getCell('A1').value = `REPORTE - ${session.schoolName.toUpperCase()} (${session.gradeName.toUpperCase()})`;
-          s1.getCell('A1').font = { size: 13, bold: true, color: { argb: 'FFFFFFFF' } };
-          s1.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A8A' } };
-          s1.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
-          s1.getRow(1).height = 28;
-
-          s1.columns = [
-            { width: 14 }, { width: 14 }, { width: 12 }, { width: 12 },
-            { width: 16 }, { width: 14 }, { width: 40 }, { width: 18 }
-          ];
-          const h1 = s1.getRow(3);
-          h1.values = ['ID Orden', 'Fecha', 'Hora', 'Caja', 'Medio Pago', 'Estado', 'Productos', 'Total (₲)'];
-          h1.eachCell(c => {
-            c.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-            c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } };
-            c.border = thinBorder;
-          });
-
-          orders.forEach((o, i) => {
-            const r = s1.getRow(4 + i);
-            r.values = [
-              o.id, o.date, o.timestamp, o.register, o.paymentMethod, o.status,
-              o.items.map(it => `${it.qty}x ${it.name}`).join(', '), o.total
-            ];
-            r.getCell(8).numFmt = '"₲ "#,##0';
-            r.eachCell(c => { c.border = thinBorder; });
-          });
-
-          const buffer = await workbook.xlsx.writeBuffer();
-          const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `Reporte_${session.schoolId}_${session.gradeId}_${new Date().toISOString().split('T')[0]}.xlsx`;
-          a.click();
-          URL.revokeObjectURL(url);
-        } catch (err) {
-          alert('Error al generar Excel: ' + err.message);
-        } finally {
-          setIsExporting(false);
-        }
-      };
-
-      if (!session) {
-        return (
-          <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col justify-center p-6 shadow-lg relative">
-            <div className="text-center mb-6 mt-4">
-              <div className="flex justify-center mb-3">
-                <EmpanadaLogo className="w-20 h-20 drop-shadow-md" />
-              </div>
-              <h1 className="text-2xl font-bold text-gray-800">CantinApp</h1>
-              <p className="text-xs text-gray-500 mt-1">Gestión de Cantinas Escolares</p>
-            </div>
-
-            {/* Pestañas Principales: Público vs Staff */}
-            <div className="grid grid-cols-2 gap-1 bg-gray-200 p-1 rounded-xl text-xs font-bold mb-4">
-              <button
-                type="button"
-                onClick={() => { setPortalMode('publico'); setLoginError(''); stopCamera(); }}
-                className={`py-2.5 rounded-lg transition ${portalMode === 'publico' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}
-              >
-                👀 Vista Público
-              </button>
-              <button
-                type="button"
-                onClick={() => { setPortalMode('staff'); setLoginError(''); stopCamera(); }}
-                className={`py-2.5 rounded-lg transition ${portalMode === 'staff' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}
-              >
-                🔐 Acceso Staff
-              </button>
-            </div>
-
-            {portalMode === 'publico' ? (
-              <div className="bg-blue-50/70 border border-blue-100 rounded-2xl p-5 space-y-4 text-center">
-                <h3 className="font-bold text-xs text-blue-900 uppercase tracking-wide">Escanear QR del Colegio</h3>
-                <p className="text-xs text-gray-600">Apunta la cámara de tu celular al código QR impreso en la entrada para ver el menú al instante.</p>
-
-                {!isScanning ? (
-                  <button
-                    onClick={() => { setIsScanning(true); setScanError(''); }}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-sm shadow transition flex items-center justify-center gap-2"
-                  >
-                    📷 Activar Lector de QR
-                  </button>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="relative rounded-xl overflow-hidden bg-black aspect-square flex items-center justify-center">
-                      <video ref={videoRef} className="w-full h-full object-cover"></video>
-                      <canvas ref={canvasRef} className="hidden"></canvas>
-                      <div className="absolute inset-0 border-2 border-dashed border-white/70 m-8 rounded-xl pointer-events-none flex items-center justify-center">
-                        <span className="bg-black/60 text-white text-[10px] px-2 py-1 rounded">Centra el código QR aquí</span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={stopCamera}
-                      className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs transition"
-                    >
-                      Detener Cámara
-                    </button>
-                  </div>
-                )}
-
-                {scanError && (
-                  <div className="bg-red-100 text-red-700 text-xs p-2 rounded font-medium">
-                    {scanError}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-1 bg-gray-100 p-1 rounded-lg text-[11px] font-bold mb-2">
-                  <button
-                    type="button"
-                    onClick={() => { setStaffRole('caja'); setLoginError(''); }}
-                    className={`py-1.5 rounded transition ${staffRole === 'caja' ? 'bg-blue-600 text-white' : 'text-gray-600'}`}
-                  >
-                    🛒 Caja / Alumnos
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setStaffRole('profesor'); setLoginError(''); }}
-                    className={`py-1.5 rounded transition ${staffRole === 'profesor' ? 'bg-blue-600 text-white' : 'text-gray-600'}`}
-                  >
-                    👨‍🏫 Profesor (Admin)
-                  </button>
-                </div>
-
-                <form onSubmit={handleStaffLogin} className="bg-blue-50/70 border border-blue-100 rounded-2xl p-4 space-y-3">
-                  <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Nombre del Colegio:</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ej: Colegio San José"
-                      value={schoolInput}
-                      onChange={(e) => setSchoolInput(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Grado / Curso:</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ej: 9no Grado"
-                      value={gradeInput}
-                      onChange={(e) => setGradeInput(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">
-                      {staffRole === 'profesor' ? 'PIN del Profesor:' : 'PIN de Caja:'}
-                    </label>
-                    <input
-                      type="password"
-                      inputMode="numeric"
-                      required
-                      placeholder="Ej: 1234"
-                      value={inputPin}
-                      onChange={(e) => setInputPin(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  {loginError && (
-                    <div className="bg-red-100 text-red-700 text-xs p-2.5 rounded-lg font-medium">
-                      {loginError}
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={isLoggingIn}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm shadow transition disabled:opacity-50"
-                  >
-                    {isLoggingIn ? 'Conectando...' : (staffRole === 'profesor' ? 'Ingresar como Profesor' : 'Ingresar a Caja')}
-                  </button>
-                </form>
-              </div>
-            )}
-          </div>
-        );
+    }
+
+    state.ventas.push({
+      id: Date.now(),
+      fecha,
+      nombre,
+      ruc,
+      tipoFactura,
+      nroFactura,
+      metodo,
+      condicion,
+      items: elegidos.map(i => ({ ...i })),
+      total,
+      iva10,
+      recibido,
+      vuelto,
+      pagado: condicion === "Contado",
+      nroRecibo: reciboGenerado ? reciboGenerado.numero : null,
+      anulada: false,
+      motivoAnulacion: "",
+      fechaAnulacion: "",
+      reemplazaA: refacturaDeNro || null,
+      editadoPorAdmin: false
+    });
+
+    document.getElementById("gf-factura-nro").textContent = `${nroFactura} (${tipoFactura})`;
+    document.getElementById("gf-fecha").textContent = fecha;
+    document.getElementById("gf-condicion").textContent = condicion.toUpperCase();
+    document.getElementById("gf-metodo").textContent = metodo;
+    document.getElementById("gf-ruc").textContent = ruc;
+    document.getElementById("gf-nombre").textContent = nombre;
+    document.getElementById("gf-detalle").innerHTML = elegidos.map(i =>
+      `<div class="row-flex"><span>1x ${i.nombre}</span><span>${fmt(i.precio)}</span></div>`
+    ).join("");
+    document.getElementById("gf-grav10").textContent = fmt(total);
+    document.getElementById("gf-total").textContent = fmt(total);
+    document.getElementById("gf-iva10").textContent = fmt(iva10);
+
+    const btnVerRecibo = document.getElementById("btn-ver-recibo-venta");
+    if (reciboGenerado) {
+      btnVerRecibo.classList.remove("hidden");
+      document.getElementById("gf-nro-recibo").textContent = reciboGenerado.numero;
+      btnVerRecibo.onclick = () => abrirModalRecibo(reciboGenerado.numero);
+    } else {
+      btnVerRecibo.classList.add("hidden");
+    }
+
+    const vueltoRow = document.getElementById("gf-vuelto-row");
+    if (metodo === "Efectivo" && vuelto > 0) {
+      vueltoRow.classList.remove("hidden");
+      document.getElementById("gf-vuelto").textContent = `Recibido ${fmt(recibido)} · Vuelto ${fmt(vuelto)}`;
+    } else {
+      vueltoRow.classList.add("hidden");
+    }
+    document.getElementById("guia-factura").classList.remove("hidden");
+
+    seleccionados.clear();
+    refacturaDeNro = null;
+    document.getElementById("banner-refacturacion").classList.add("hidden");
+    document.getElementById("efectivo-recibido").value = "";
+    document.getElementById("condicion-venta").value = "Contado";
+    sincronizarCondicionYMetodo();
+    renderAll();
+    await syncToCloud();
+  };
+
+  // --- ANULACIÓN Y CORRECCIÓN CONTABLE POR ADMIN ---
+  window.abrirModalAnularFactura = (id) => {
+    if (rolActual !== "admin") return;
+    const venta = state.ventas.find(v => v.id === id);
+    if (!venta || venta.anulada) return;
+    ventaEnAnulacionId = id;
+    document.getElementById("anul-modal-info").innerHTML =
+      `Cliente: <strong>${venta.nombre}</strong> (${venta.ruc})<br/>Monto: <strong>${fmt(venta.total)}</strong> · ${venta.metodo}`;
+    document.getElementById("anul-tipo-doc").value = venta.tipoFactura || "Preimpresa";
+    document.getElementById("anul-nro-factura").value = venta.nroFactura || "";
+    document.getElementById("anul-detalle-extra").value = "";
+    document.getElementById("modal-anular-factura").classList.remove("hidden");
+  };
+
+  document.getElementById("btn-cancelar-anul").onclick = () => {
+    ventaEnAnulacionId = null;
+    document.getElementById("modal-anular-factura").classList.add("hidden");
+  };
+
+  async function ejecutarAnulacionContable(refacturar) {
+    const venta = state.ventas.find(v => v.id === ventaEnAnulacionId);
+    if (!venta) return;
+
+    const tipoDoc = document.getElementById("anul-tipo-doc").value;
+    const nroFact = document.getElementById("anul-nro-factura").value.trim() || venta.nroFactura || "S/N";
+    const motivoBase = document.getElementById("anul-motivo-select").value;
+    const extra = document.getElementById("anul-detalle-extra").value.trim();
+    const motivoCompleto = extra ? `${motivoBase} (${extra})` : motivoBase;
+
+    // Deja la factura asentada en estado ANULADA sin borrarla del Libro Ventas
+    venta.anulada = true;
+    venta.tipoFactura = tipoDoc;
+    venta.nroFactura = nroFact;
+    venta.motivoAnulacion = motivoCompleto;
+    venta.fechaAnulacion = new Date().toLocaleDateString("es-PY");
+
+    // Si tenía un recibo asociado, también lo marca como anulado para que no sume dinero
+    if (venta.nroRecibo && state.recibos) {
+      const rec = state.recibos.find(r => r.numero === venta.nroRecibo);
+      if (rec) rec.anulado = true;
+    }
+
+    const copiaDatos = {
+      nombre: venta.nombre,
+      ruc: venta.ruc,
+      condicion: venta.condicion,
+      metodo: venta.metodo,
+      items: venta.items || [],
+      nroAnulado: nroFact
+    };
+
+    ventaEnAnulacionId = null;
+    document.getElementById("modal-anular-factura").classList.add("hidden");
+    renderAll();
+    await syncToCloud();
+
+    if (refacturar) {
+      // Cambia a la pestaña 1 y precarga los datos para emitir la factura corregida
+      document.querySelectorAll("section").forEach(s => s.classList.add("hidden"));
+      document.getElementById("tab-pos").classList.remove("hidden");
+      document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+      document.querySelector('nav button[data-tab="pos"]').classList.add("active");
+
+      document.getElementById("cli-nombre").value = copiaDatos.nombre === "Cliente Ocasional" ? "" : copiaDatos.nombre;
+      document.getElementById("cli-ruc").value = copiaDatos.ruc === "X" ? "" : copiaDatos.ruc;
+      document.getElementById("condicion-venta").value = copiaDatos.condicion || "Contado";
+      sincronizarCondicionYMetodo();
+      if (copiaDatos.condicion === "Contado" && copiaDatos.metodo !== "Crédito Cliente") {
+        document.getElementById("metodo-pago").value = copiaDatos.metodo;
+        document.getElementById("panel-efectivo").classList.toggle("hidden", copiaDatos.metodo !== "Efectivo");
       }
 
-      const filteredProducts = products.filter(p => {
-        const matchesCat = selectedCategory === 'Todas' || p.category === selectedCategory;
-        const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCat && matchesSearch;
+      seleccionados.clear();
+      copiaDatos.items.forEach(item => {
+        const srv = state.servicios.find(s => s.id === item.id || s.nombre === item.nombre);
+        if (srv) seleccionados.add(srv.id);
       });
-
-      const filteredOrdersDelivery = orders.filter(o =>
-        o.id.toLowerCase().includes(deliverySearch.toLowerCase()) ||
-        o.register.toLowerCase().includes(deliverySearch.toLowerCase())
-      );
-
-      const pendingCount = orders.filter(o => o.status === 'Pendiente').length;
-      const lowStockCount = products.filter(p => (p.stock ?? 0) <= 5).length;
-
-      const closingOrders = orders.filter(o => o.date === closingDate && (closingRegister === 'Todas' || o.register === closingRegister) && o.status !== 'Cancelado');
-      const totalClosingSales = closingOrders.reduce((sum, o) => sum + o.total, 0);
-      const salesByPayment = closingOrders.reduce((acc, o) => {
-        acc[o.paymentMethod] = (acc[o.paymentMethod] || 0) + o.total;
-        return acc;
-      }, {});
-
-      return (
-        <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col shadow-lg relative">
-          {/* Encabezado */}
-          <header className="bg-blue-600 text-white p-3.5 sticky top-0 z-30 shadow-md">
-            <div className="flex justify-between items-center mb-2">
-              <div className="flex items-center gap-2">
-                <EmpanadaLogo className="w-8 h-8" />
-                <div>
-                  <h1 className="text-base font-bold tracking-tight flex items-center gap-1.5">
-                    {session.gradeName}
-                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-300 animate-pulse" title="En vivo"></span>
-                  </h1>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <button onClick={handleLogout} className="text-[11px] text-blue-100 underline">
-                      {session.schoolName} • {isProfessor ? 'Profesor' : session.role === 'viewer' ? 'Público' : 'Caja'} (Salir)
-                    </button>
-                  </div>
-                </div>
-              </div>
-              {isStaff ? (
-                <select
-                  value={activeRegister}
-                  onChange={(e) => setActiveRegister(e.target.value)}
-                  className="bg-blue-700 text-white text-xs px-2 py-1.5 rounded font-medium border border-blue-400 focus:outline-none"
-                >
-                  <option value="Caja 1">Caja 1</option>
-                  <option value="Caja 2">Caja 2</option>
-                  <option value="Despacho">Despacho</option>
-                </select>
-              ) : (
-                <span className="bg-blue-800 text-blue-100 text-[11px] px-2.5 py-1 rounded-full font-semibold">
-                  Menú Público
-                </span>
-              )}
-            </div>
-
-            {isStaff && (
-              <nav className="flex justify-between bg-blue-700/60 p-1 rounded-lg text-xs font-medium">
-                <button onClick={() => setActiveTab('menu')} className={`flex-1 py-1.5 rounded text-center transition ${activeTab === 'menu' ? 'bg-white text-blue-700 font-bold' : 'text-blue-100'}`}>Menú</button>
-                <button onClick={() => setActiveTab('delivery')} className={`flex-1 py-1.5 rounded text-center transition ${activeTab === 'delivery' ? 'bg-white text-blue-700 font-bold' : 'text-blue-100'}`}>
-                  Despacho {pendingCount > 0 ? `(${pendingCount})` : ''}
-                </button>
-                <button onClick={() => setActiveTab('closing')} className={`flex-1 py-1.5 rounded text-center transition ${activeTab === 'closing' ? 'bg-white text-blue-700 font-bold' : 'text-blue-100'}`}>Arqueo</button>
-                <button onClick={() => setActiveTab('products')} className={`flex-1 py-1.5 rounded text-center transition ${activeTab === 'products' ? 'bg-white text-blue-700 font-bold' : 'text-blue-100'}`}>
-                  Stock {lowStockCount > 0 ? `(!)` : ''}
-                </button>
-                {isProfessor && (
-                  <button onClick={() => setActiveTab('qr')} className={`flex-1 py-1.5 rounded text-center transition ${activeTab === 'qr' ? 'bg-white text-blue-700 font-bold' : 'text-blue-100'}`}>
-                    QR Colegio
-                  </button>
-                )}
-              </nav>
-            )}
-          </header>
-
-          {syncError && (
-            <div className="bg-amber-100 text-amber-900 text-xs px-4 py-2 border-b border-amber-200">
-              ⚠️ {syncError}
-            </div>
-          )}
-
-          <main className="flex-1 p-4 pb-36 overflow-y-auto">
-            {isSyncing ? (
-              <div className="text-center py-12 text-gray-500 text-sm">Sincronizando información en vivo...</div>
-            ) : (
-              <>
-                {/* 1. MENÚ Y COBRO */}
-                {(activeTab === 'menu' || !isStaff) && (
-                  <div>
-                    <div className="mb-4">
-                      <input
-                        type="text"
-                        placeholder="Buscar producto..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <div className="flex gap-2 overflow-x-auto mt-2 pb-1 text-xs">
-                        {categories.map(cat => (
-                          <button
-                            key={cat}
-                            onClick={() => setSelectedCategory(cat)}
-                            className={`px-3 py-1.5 rounded-full whitespace-nowrap transition ${selectedCategory === cat ? 'bg-blue-600 text-white font-medium' : 'bg-gray-100 text-gray-600'}`}
-                          >
-                            {cat}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 mb-6">
-                      {filteredProducts.map(p => {
-                        const stockQty = p.stock ?? 0;
-                        const isOut = stockQty <= 0;
-                        const inCartQty = cart.find(c => c.id === p.id)?.qty || 0;
-
-                        return (
-                          <div key={p.id} className={`bg-white border rounded-xl overflow-hidden shadow-sm flex flex-col justify-between ${isOut ? 'opacity-70' : ''}`}>
-                            <div className="relative">
-                              <img src={p.image} alt={p.name} className={`h-28 w-full object-cover ${isOut ? 'grayscale' : ''}`} />
-                              <span className={`absolute top-1.5 right-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm ${
-                                isOut ? 'bg-red-600 text-white' :
-                                stockQty <= 5 ? 'bg-amber-400 text-amber-950' : 'bg-emerald-600 text-white'
-                              }`}>
-                                {isOut ? 'Agotado' : `Disp: ${stockQty}`}
-                              </span>
-                            </div>
-                            <div className="p-2 flex-1 flex flex-col justify-between">
-                              <div>
-                                <h3 className="font-semibold text-xs leading-tight text-gray-800">{p.name}</h3>
-                                <span className="text-blue-600 font-bold text-sm">₲ {p.price.toLocaleString()}</span>
-                              </div>
-                              {isStaff && (
-                                <button
-                                  onClick={() => addToCart(p)}
-                                  disabled={isOut || inCartQty >= stockQty}
-                                  className={`mt-2 w-full text-xs font-semibold py-1.5 rounded-lg transition ${
-                                    isOut || inCartQty >= stockQty
-                                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                      : 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white'
-                                  }`}
-                                >
-                                  {isOut ? 'Sin Stock' : (inCartQty >= stockQty ? 'Máx. en carrito' : '+ Agregar')}
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Carrito Flotante con Calculadora de Vuelto */}
-                    {isStaff && cart.length > 0 && (
-                      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t p-3.5 shadow-2xl z-20 rounded-t-2xl max-h-[80vh] overflow-y-auto">
-                        <div className="flex justify-between items-center mb-1.5">
-                          <h3 className="font-bold text-xs text-gray-700">Pedido ({activeRegister})</h3>
-                          <button onClick={() => { setCart([]); setCashReceived(''); }} className="text-[11px] text-red-500 underline">Vaciar</button>
-                        </div>
-                        <div className="max-h-24 overflow-y-auto mb-2.5 divide-y text-xs">
-                          {cart.map(item => (
-                            <div key={item.id} className="py-1 flex justify-between items-center">
-                              <span className="font-medium text-gray-800">{item.name}</span>
-                              <div className="flex items-center gap-2">
-                                <button onClick={() => updateQty(item.id, -1)} className="w-5 h-5 bg-gray-200 rounded font-bold">-</button>
-                                <span className="font-bold">{item.qty}</span>
-                                <button onClick={() => updateQty(item.id, 1)} className="w-5 h-5 bg-gray-200 rounded font-bold">+</button>
-                                <span className="w-16 text-right font-semibold">₲ {(item.price * item.qty).toLocaleString()}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className="mb-2">
-                          <label className="text-[11px] font-semibold text-gray-600 block mb-1">Medio de Pago:</label>
-                          <div className="grid grid-cols-3 gap-1.5 text-xs">
-                            {['Efectivo', 'Transferencia', 'Tarjeta'].map(m => (
-                              <button
-                                key={m}
-                                onClick={() => { setPaymentMethod(m); if (m !== 'Efectivo') setCashReceived(''); }}
-                                className={`py-1 rounded border text-center font-medium ${paymentMethod === m ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-50 text-gray-700'}`}
-                              >
-                                {m}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {paymentMethod === 'Efectivo' && (
-                          <div className="bg-blue-50 border border-blue-200 rounded-xl p-2.5 mb-2.5">
-                            <div className="flex justify-between items-center gap-2 mb-1.5">
-                              <label className="text-[11px] font-bold text-blue-900 shrink-0">Recibido (₲):</label>
-                              <input
-                                type="number"
-                                inputMode="numeric"
-                                placeholder={`Ej: ${cartTotal}`}
-                                value={cashReceived}
-                                onChange={(e) => setCashReceived(e.target.value)}
-                                className="w-full px-2.5 py-1 border border-blue-300 rounded-lg text-sm font-bold text-right bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              />
-                            </div>
-                            <div className="flex gap-1 overflow-x-auto pb-1">
-                              <button type="button" onClick={() => setCashReceived(String(cartTotal))} className="px-2 py-0.5 bg-white border border-blue-200 rounded text-[10px] font-bold text-blue-700 shrink-0">
-                                Exacto
-                              </button>
-                              {[10000, 15000, 20000, 25000, 50000, 100000].map(bill => (
-                                <button
-                                  key={bill}
-                                  type="button"
-                                  onClick={() => setCashReceived(String((Number(cashReceived) || 0) + bill))}
-                                  className="px-2 py-0.5 bg-white border border-blue-200 rounded text-[10px] font-semibold text-gray-700 shrink-0 hover:bg-blue-100"
-                                >
-                                  +{bill >= 1000 ? (bill / 1000) + 'mil' : bill}
-                                </button>
-                              ))}
-                              {cashReceived !== '' && (
-                                <button type="button" onClick={() => setCashReceived('')} className="px-2 py-0.5 bg-red-100 rounded text-[10px] font-bold text-red-700 shrink-0">
-                                  Limpiar
-                                </button>
-                              )}
-                            </div>
-                            {cashReceived !== '' && (
-                              <div className={`mt-1.5 pt-1.5 border-t border-blue-200 flex justify-between items-center text-xs font-extrabold ${changeAmount < 0 ? 'text-red-600' : 'text-emerald-700'}`}>
-                                <span>{changeAmount < 0 ? 'Falta entregar:' : 'Vuelto a dar:'}</span>
-                                <span className="text-sm">₲ {Math.abs(changeAmount).toLocaleString()}</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        <div className="flex justify-between items-center pt-1.5 border-t mb-2.5">
-                          <span className="font-bold text-gray-700 text-sm">Total:</span>
-                          <span className="font-bold text-lg text-blue-600">₲ {cartTotal.toLocaleString()}</span>
-                        </div>
-
-                        <button
-                          onClick={handleCheckout}
-                          disabled={paymentMethod === 'Efectivo' && cashReceived !== '' && numericCash < cartTotal}
-                          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-bold py-2.5 rounded-xl text-sm shadow transition"
-                        >
-                          Confirmar Cobro & Descontar Stock
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 2. DESPACHO */}
-                {isStaff && activeTab === 'delivery' && (
-                  <div>
-                    <input
-                      type="text"
-                      placeholder="Buscar por # de orden..."
-                      value={deliverySearch}
-                      onChange={(e) => setDeliverySearch(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-4"
-                    />
-                    {filteredOrdersDelivery.length === 0 ? (
-                      <div className="text-center py-8 text-gray-400 text-xs">No hay pedidos en este grado.</div>
-                    ) : (
-                      <div className="space-y-3">
-                        {filteredOrdersDelivery.map(order => (
-                          <div key={order.id} className={`bg-white border rounded-xl p-3 shadow-sm ${order.status === 'Pendiente' ? 'border-l-4 border-l-amber-500' : ''}`}>
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <span className="font-bold text-blue-600">{order.id}</span>
-                                <span className="text-xs text-gray-500 block">{order.register} • {order.timestamp} ({order.paymentMethod})</span>
-                              </div>
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                                order.status === 'Pendiente' ? 'bg-amber-100 text-amber-800' :
-                                order.status === 'Entregado' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                              }`}>
-                                {order.status}
-                              </span>
-                            </div>
-
-                            <div className="bg-gray-50 p-2 rounded text-xs space-y-1 mb-3">
-                              {order.items.map((item, idx) => (
-                                <div key={idx} className="flex justify-between">
-                                  <span>{item.qty}x {item.name}</span>
-                                  <span className="font-medium">₲ {(item.price * item.qty).toLocaleString()}</span>
-                                </div>
-                              ))}
-                            </div>
-
-                            <div className="flex justify-between items-center pt-2 border-t text-xs">
-                              <span className="font-bold text-gray-700">Total: ₲ {order.total.toLocaleString()}</span>
-                              <div className="flex gap-1">
-                                {order.status !== 'Entregado' && (
-                                  <button onClick={() => updateOrderStatus(order, 'Entregado')} className="bg-emerald-600 text-white px-3 py-1 rounded font-semibold">
-                                    Entregar
-                                  </button>
-                                )}
-                                {order.status !== 'Cancelado' && (
-                                  <button onClick={() => updateOrderStatus(order, 'Cancelado')} className="bg-gray-200 text-gray-700 px-2 py-1 rounded font-medium">
-                                    Anular
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 3. ARQUEO DE CAJA */}
-                {isStaff && activeTab === 'closing' && (
-                  <div>
-                    {!isProfessor ? (
-                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-                        <h3 className="font-bold text-sm text-amber-900 mb-1">🔒 Sección Protegida</h3>
-                        <p className="text-xs text-amber-700 mb-3">El arqueo de caja está reservado exclusivamente para el Profesor.</p>
-                      </div>
-                    ) : (
-                      <div className="bg-white border rounded-xl p-4 shadow-sm">
-                        <h2 className="font-bold text-base text-gray-800 border-b pb-2 mb-3">📊 Arqueo del Grado</h2>
-                        <div className="grid grid-cols-2 gap-2 mb-3">
-                          <div>
-                            <label className="text-xs text-gray-600 block mb-1">Fecha:</label>
-                            <input type="date" value={closingDate} onChange={(e) => setClosingDate(e.target.value)} className="w-full text-xs border rounded p-1.5" />
-                          </div>
-                          <div>
-                            <label className="text-xs text-gray-600 block mb-1">Caja:</label>
-                            <select value={closingRegister} onChange={(e) => setClosingRegister(e.target.value)} className="w-full text-xs border rounded p-1.5">
-                              <option value="Todas">Todas</option>
-                              <option value="Caja 1">Caja 1</option>
-                              <option value="Caja 2">Caja 2</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center mb-4">
-                          <span className="text-xs text-blue-600 uppercase font-semibold">Total Recaudado</span>
-                          <div className="text-2xl font-bold text-blue-700">₲ {totalClosingSales.toLocaleString()}</div>
-                          <span className="text-xs text-gray-500">{closingOrders.length} ventas válidas</span>
-                        </div>
-
-                        <div className="mb-4 text-xs space-y-1 bg-gray-50 p-2.5 rounded">
-                          {['Efectivo', 'Transferencia', 'Tarjeta'].map(m => (
-                            <div key={m} className="flex justify-between">
-                              <span>{m}:</span>
-                              <span className="font-bold">₲ {(salesByPayment[m] || 0).toLocaleString()}</span>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className="flex gap-2">
-                          <button onClick={() => window.print()} className="flex-1 bg-gray-800 text-white py-2.5 rounded-xl font-bold text-xs">
-                            🖨️ Imprimir
-                          </button>
-                          <button onClick={exportToExcel} disabled={isExporting} className="flex-1 bg-emerald-600 text-white py-2.5 rounded-xl font-bold text-xs">
-                            {isExporting ? 'Generando...' : '📊 Exportar Excel'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 4. STOCK Y PRODUCTOS */}
-                {isStaff && activeTab === 'products' && (
-                  <div>
-                    {isProfessor && (
-                      <form onSubmit={handleSaveProduct} className="bg-white border rounded-xl p-3 shadow-sm mb-4 text-xs space-y-2">
-                        <h3 className="font-bold text-sm text-gray-800">{editingProduct ? 'Editar Producto' : 'Nuevo Producto'}</h3>
-                        <div>
-                          <label className="text-gray-600 block">Nombre:</label>
-                          <input type="text" required value={productForm.name} onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} className="w-full border rounded p-1.5 mt-0.5" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="text-gray-600 block">Precio (₲):</label>
-                            <input type="number" required value={productForm.price} onChange={(e) => setProductForm({ ...productForm, price: e.target.value })} className="w-full border rounded p-1.5 mt-0.5" />
-                          </div>
-                          <div>
-                            <label className="text-gray-600 block">Stock Inicial:</label>
-                            <input type="number" min="0" required value={productForm.stock} onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })} className="w-full border rounded p-1.5 mt-0.5" />
-                          </div>
-                        </div>
-                        <div className="flex gap-2 pt-1">
-                          <button type="submit" className="flex-1 bg-blue-600 text-white font-bold py-1.5 rounded">
-                            {editingProduct ? 'Guardar Cambios' : 'Crear Producto'}
-                          </button>
-                          {editingProduct && (
-                            <button type="button" onClick={() => { setEditingProduct(null); setProductForm({ name: '', price: '', category: 'Comida', stock: '', image: '' }); }} className="bg-gray-200 px-3 rounded">
-                              Cancelar
-                            </button>
-                          )}
-                        </div>
-                      </form>
-                    )}
-
-                    <h3 className="font-bold text-xs text-gray-700 mb-2">Inventario del Grado:</h3>
-                    <div className="space-y-2">
-                      {products.map(p => {
-                        const st = p.stock ?? 0;
-                        return (
-                          <div key={p.id} className="bg-white border rounded-lg p-2.5 flex items-center justify-between text-xs shadow-sm">
-                            <div className="flex items-center gap-2">
-                              <img src={p.image} alt={p.name} className="w-11 h-11 rounded-lg object-cover" />
-                              <div>
-                                <div className="font-bold text-gray-800">{p.name}</div>
-                                <div className="text-gray-500">₲ {p.price.toLocaleString()}</div>
-                                <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                                  st === 0 ? 'bg-red-100 text-red-700' : st <= 5 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-                                }`}>
-                                  Stock: {st} unid.
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex flex-col gap-1 items-end">
-                              <button onClick={() => { setStockModalProd(p); setStockToAdd(''); }} className="bg-emerald-600 text-white px-2.5 py-1 rounded font-bold shadow-sm">
-                                + Sumar
-                              </button>
-
-                              {isProfessor && (
-                                <>
-                                  <button onClick={() => { setDeductModalProd(p); setStockToDeduct(''); }} className="bg-amber-600 text-white px-2 py-0.5 rounded font-semibold">
-                                    - Descontar
-                                  </button>
-                                  <div className="flex gap-1 mt-0.5">
-                                    <button onClick={() => startEditProduct(p)} className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-semibold">Editar</button>
-                                    <button onClick={() => deleteProduct(p.id)} className="bg-red-100 text-red-700 px-2 py-0.5 rounded font-semibold">Borrar</button>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* 5. IMPRESIÓN DE QR DEL COLEGIO (Solo Profesor) */}
-                {isProfessor && activeTab === 'qr' && (
-                  <div className="bg-white border rounded-xl p-5 text-center shadow-sm">
-                    <h3 className="font-bold text-base text-gray-800 mb-1">QR de Acceso al Colegio</h3>
-                    <p className="text-xs text-gray-500 mb-4">Imprime este código QR y colócalo en el evento. Al escanearlo, el público accederá automáticamente a la cantina de este curso sin configurar nada.</p>
-                    <div className="flex justify-center mb-4 bg-gray-50 p-4 rounded-xl border">
-                      <div id="school-qrcode"></div>
-                    </div>
-                    <button onClick={() => window.print()} className="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs">
-                      🖨️ Imprimir Código QR del Colegio
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </main>
-
-          {/* MODAL SUMAR STOCK */}
-          {isStaff && stockModalProd && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <form onSubmit={handleConfirmAddStock} className="bg-white rounded-2xl p-5 w-full max-w-xs shadow-xl">
-                <h3 className="font-bold text-base text-gray-800 mb-1">Ingresar Mercadería</h3>
-                <p className="text-xs text-gray-500 mb-3">
-                  Producto: <strong className="text-gray-800">{stockModalProd.name}</strong><br />
-                  Stock actual: <strong className="text-emerald-700">{stockModalProd.stock ?? 0} unidades</strong>
-                </p>
-                <input
-                  type="number"
-                  required
-                  min="1"
-                  autoFocus
-                  placeholder="Cantidad (ej: 20)"
-                  value={stockToAdd}
-                  onChange={(e) => setStockToAdd(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl text-base font-bold text-center mb-3"
-                />
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => { setStockModalProd(null); setStockToAdd(''); }} className="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded-xl text-xs">
-                    Cancelar
-                  </button>
-                  <button type="submit" className="flex-1 bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs">
-                    Sumar Stock
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* MODAL DESCONTAR CONSUMO INTERNO */}
-          {isProfessor && deductModalProd && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <form onSubmit={handleConfirmDeductStock} className="bg-white rounded-2xl p-5 w-full max-w-xs shadow-xl">
-                <h3 className="font-bold text-base text-gray-800 mb-1">Descontar Consumo Interno</h3>
-                <p className="text-xs text-gray-500 mb-3">
-                  Producto: <strong className="text-gray-800">{deductModalProd.name}</strong><br />
-                  Stock disponible: <strong className="text-amber-700">{deductModalProd.stock ?? 0} unidades</strong>
-                </p>
-                <input
-                  type="number"
-                  required
-                  min="1"
-                  max={deductModalProd.stock ?? 0}
-                  autoFocus
-                  placeholder="Cantidad consumida (ej: 2)"
-                  value={stockToDeduct}
-                  onChange={(e) => setStockToDeduct(e.target.value)}
-                  className="w-full px-3 py-2 border border-amber-300 rounded-xl text-base font-bold text-center mb-3"
-                />
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => { setDeductModalProd(null); setStockToDeduct(''); }} className="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded-xl text-xs">
-                    Cancelar
-                  </button>
-                  <button type="submit" className="flex-1 bg-amber-600 text-white font-bold py-2 rounded-xl text-xs">
-                    Descontar Stock
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* MODAL VOUCHER */}
-          {isStaff && activeOrder && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl p-5 w-full max-w-sm text-center shadow-xl">
-                <div className="text-emerald-600 font-bold text-sm mb-1">¡Venta Registrada y Stock Actualizado!</div>
-                <h2 className="text-xl font-bold text-gray-800">{activeOrder.id}</h2>
-                <p className="text-xs text-gray-500 mb-3">{activeOrder.register} • {activeOrder.paymentMethod}</p>
-                <div className="flex justify-center mb-3 bg-gray-50 p-3 rounded-xl">
-                  <div id="qrcode"></div>
-                </div>
-                <div className="text-left bg-gray-50 p-3 rounded-xl text-xs space-y-1 mb-4">
-                  {activeOrder.items.map((it, idx) => (
-                    <div key={idx} className="flex justify-between">
-                      <span>{it.qty}x {it.name}</span>
-                      <span className="font-semibold">₲ {(it.price * it.qty).toLocaleString()}</span>
-                    </div>
-                  ))}
-                  <div className="flex justify-between font-bold pt-1 border-t text-blue-600 text-sm">
-                    <span>Total:</span>
-                    <span>₲ {activeOrder.total.toLocaleString()}</span>
-                  </div>
-                  {activeOrder.cashReceived !== null && (
-                    <>
-                      <div className="flex justify-between text-gray-600 pt-1">
-                        <span>Recibido:</span>
-                        <span>₲ {activeOrder.cashReceived.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between font-extrabold text-emerald-700 text-sm">
-                        <span>Vuelto:</span>
-                        <span>₲ {activeOrder.changeGiven.toLocaleString()}</span>
-                      </div>
-                    </>
-                  )}
-                </div>
-                <button onClick={() => setActiveOrder(null)} className="w-full bg-blue-600 text-white font-bold py-2 rounded-xl text-sm">
-                  Cerrar Voucher
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      );
+      refacturaDeNro = copiaDatos.nroAnulado;
+      document.getElementById("banner-refacturacion").classList.remove("hidden");
+      renderServicios();
+      sugerirSiguienteFactura();
     }
+  }
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
+  document.getElementById("btn-solo-anular").onclick = () => ejecutarAnulacionContable(false);
+  document.getElementById("btn-anular-y-refacturar").onclick = () => ejecutarAnulacionContable(true);
+
+  // Liquidación de cuenta a crédito
+  window.abrirCobroCredito = (id) => {
+    const venta = state.ventas.find(v => v.id === id);
+    if (!venta || venta.anulada) return;
+    creditoEnCobroId = id;
+    document.getElementById("cred-modal-info").innerHTML =
+      `Cliente: <strong>${venta.nombre}</strong> (${venta.ruc})<br/>Saldo a cobrar: <strong style="color:var(--primary);">${fmt(venta.total)}</strong>`;
+    document.getElementById("modal-cobrar-credito").classList.remove("hidden");
+  };
+
+  document.getElementById("btn-cancelar-cred").onclick = () => {
+    creditoEnCobroId = null;
+    document.getElementById("modal-cobrar-credito").classList.add("hidden");
+  };
+
+  document.getElementById("btn-confirmar-cred").onclick = async () => {
+    const venta = state.ventas.find(v => v.id === creditoEnCobroId);
+    if (!venta) return;
+    const metodoCobro = document.getElementById("cred-metodo-pago").value;
+    const fechaCobro = new Date().toLocaleDateString("es-PY");
+
+    const recibo = emitirNuevoRecibo({
+      fecha: fechaCobro,
+      cliente: venta.nombre,
+      ruc: venta.ruc,
+      metodo: metodoCobro,
+      concepto: `Cancelación saldo Fact. ${venta.nroFactura || ""} del ${venta.fecha}`,
+      total: venta.total
+    });
+
+    venta.pagado = true;
+    venta.metodo = metodoCobro;
+    venta.fechaCobroCredito = fechaCobro;
+    venta.nroRecibo = recibo.numero;
+
+    creditoEnCobroId = null;
+    document.getElementById("modal-cobrar-credito").classList.add("hidden");
+    renderAll();
+    await syncToCloud();
+    abrirModalRecibo(recibo.numero);
+  };
+
+  window.cambiarMetodoAdmin = async (id, nuevoMetodo) => {
+    if (rolActual !== "admin") return;
+    const venta = state.ventas.find(v => v.id === id);
+    if (!venta || venta.anulada) return;
+    venta.metodo = nuevoMetodo;
+    venta.condicion = nuevoMetodo === "Crédito Cliente" ? "Crédito" : "Contado";
+    venta.pagado = nuevoMetodo !== "Crédito Cliente";
+    venta.editadoPorAdmin = true;
+    renderAll();
+    await syncToCloud();
+  };
+
+  document.getElementById("comp-tipo").onchange = () => {
+    const tipo = document.getElementById("comp-tipo").value;
+    const map = {
+      insumos: "5.1.01 - Costo Directo de Servicios (Crédito Fiscal 10%)",
+      servicios_basicos: "6.1.02 - Gastos Operativos del Salón (Crédito Fiscal 10% / 5%)",
+      admin: "6.1.05 - Gastos Administrativos y Conectividad (Crédito Fiscal 10%)",
+      equipamiento: "1.2.01 - Activo Fijo / Equipamiento de Salón (Crédito Fiscal 10%)",
+      no_deducible: "6.9.01 - Gastos No Deducibles sin Respaldo Legal (0% IVA)"
+    };
+    document.getElementById("cuenta-sugerida").textContent = "Cuenta Contable: " + map[tipo];
+  };
+
+  document.getElementById("btn-compra").onclick = async () => {
+    const prov = document.getElementById("comp-prov").value.trim();
+    const nro = document.getElementById("comp-nro").value.trim();
+    const tipo = document.getElementById("comp-tipo").value;
+    const condicion = document.getElementById("comp-condicion").value;
+    const monto = Number(document.getElementById("comp-monto").value);
+    const tasa = Number(document.getElementById("comp-tasa").value);
+    if (!prov || monto <= 0) return alert("Completá proveedor y monto.");
+
+    let ivaCredito = 0;
+    if (tasa === 10) ivaCredito = monto / 11;
+    if (tasa === 5) ivaCredito = monto / 21;
+
+    state.compras.push({
+      id: Date.now(), fecha: new Date().toLocaleDateString("es-PY"),
+      prov, nro, tipo, condicion, monto, tasa, ivaCredito
+    });
+    document.getElementById("comp-prov").value = "";
+    document.getElementById("comp-nro").value = "";
+    document.getElementById("comp-monto").value = "";
+    renderAll();
+    await syncToCloud();
+    alert("Compra registrada, clasificada y encriptada en la nube.");
+  };
+
+  document.getElementById("btn-deposito").onclick = async () => {
+    const monto = Number(document.getElementById("dep-monto").value);
+    const ref = document.getElementById("dep-ref").value.trim() || "Sin ref.";
+    if (monto <= 0) return;
+    state.depositos.push({ fecha: new Date().toLocaleDateString("es-PY"), monto, ref });
+    document.getElementById("dep-monto").value = "";
+    document.getElementById("dep-ref").value = "";
+    renderAll();
+    await syncToCloud();
+  };
+
+  document.getElementById("btn-save-cfg").onclick = async () => {
+    const proxRec = Math.max(1, Number(document.getElementById("cfg-next-recibo").value) || 1);
+    const proxFact = Math.max(1, Number(document.getElementById("cfg-next-factura").value) || 1);
+    state.ultimoRecibo = proxRec - 1;
+    state.ultimaFactura = proxFact - 1;
+    state.config = {
+      salon: document.getElementById("cfg-salon").value.trim() || "Salón de Belleza",
+      modo: document.getElementById("cfg-modo").value,
+      timbrado: document.getElementById("cfg-timbrado").value,
+      exp: document.getElementById("cfg-exp").value.trim() || "001-001"
+    };
+    renderAll();
+    await syncToCloud();
+    alert(`Parámetros guardados. Próxima Factura: ${padFactura(state.config.exp, proxFact)} · Próximo Recibo: ${padRecibo(proxRec)}.`);
+  };
+
+  // Exportación RG 90 / Libro Compra-Venta incluyendo facturas anuladas en Gs. 0
+  document.getElementById("btn-exportar").onclick = () => {
+    let csv = "TIPO_REGISTRO;ESTADO;FECHA;CONTRA_PARTE;RUC;NRO_FACTURA;TIPO_DOC;METODO;CONDICION;RECIBO;TOTAL_GS;IVA_GS;OBSERVACION_CONTABLE\n";
+    state.ventas.forEach(v => {
+      const estado = v.anulada ? "ANULADA" : "VIGENTE";
+      const totalExport = v.anulada ? 0 : Math.round(v.total);
+      const ivaExport = v.anulada ? 0 : Math.round(v.iva10);
+      const obs = v.anulada
+        ? `Anulada el ${v.fechaAnulacion}: ${v.motivoAnulacion}`
+        : (v.reemplazaA ? `Reemplaza a factura anulada ${v.reemplazaA}` : "");
+      csv += `VENTA;${estado};${v.fecha};${v.nombre};${v.ruc};${v.nroFactura || "-"};${v.tipoFactura || "Preimpresa"};${v.metodo};${v.condicion};${v.nroRecibo || "-"};${totalExport};${ivaExport};${obs}\n`;
+    });
+    state.compras.forEach(c => {
+      csv += `COMPRA (${c.tipo});VIGENTE;${c.fecha};${c.prov};-;${c.nro};Factura Compra;N/A;${c.condicion};-;${Math.round(c.monto)};${Math.round(c.ivaCredito)};\n`;
+    });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `PeluApp_Libro_RG90_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+  };
+
+  function renderAll() {
+    renderServicios();
+    sincronizarCondicionYMetodo();
+    if (!document.getElementById("nro-factura-pos").value) {
+      sugerirSiguienteFactura();
+    }
+    document.getElementById("clientes-datalist").innerHTML = state.clientes
+      .map(c => `<option value="${c.nombre}">${c.ruc}</option>`).join("");
+
+    // Solo las ventas vigentes (no anuladas) suman al IVA Débito Fiscal y Arqueo de Caja
+    const ventasVigentes = state.ventas.filter(v => !v.anulada);
+    const totalDebito = ventasVigentes.reduce((a, v) => a + v.iva10, 0);
+    const totalCredito = state.compras.reduce((a, c) => a + c.ivaCredito, 0);
+    const saldo = totalDebito - totalCredito;
+
+    document.getElementById("kpi-debito").textContent = fmt(totalDebito);
+    document.getElementById("kpi-credito").textContent = fmt(totalCredito);
+    document.getElementById("kpi-saldo").textContent =
+      saldo >= 0 ? `${fmt(saldo)} (A Pagar)` : `${fmt(Math.abs(saldo))} (A Favor)`;
+
+    const porMetodo = {};
+    ventasVigentes.forEach(v => {
+      const clave = v.metodo === "Crédito Cliente" ? "Crédito Pendiente de Cobro" : v.metodo;
+      porMetodo[clave] = (porMetodo[clave] || 0) + v.total;
+    });
+    const efectivoTotal = porMetodo["Efectivo"] || 0;
+    const totalDepositado = state.depositos.reduce((a, d) => a + d.monto, 0);
+
+    document.getElementById("resumen-caja").innerHTML = Object.keys(porMetodo).length === 0
+      ? "<p style='color:var(--muted)'>Sin movimientos vigentes registrados.</p>"
+      : Object.entries(porMetodo).map(([m, t]) =>
+          `<div class="row-flex"><span>${m}:</span><strong>${fmt(t)}</strong></div>`
+        ).join("");
+    document.getElementById("estado-depositos").textContent =
+      `Efectivo en caja pendiente de depositar: ${fmt(efectivoTotal - totalDepositado)} (Depositado: ${fmt(totalDepositado)})`;
+
+    const creditosPendientes = ventasVigentes.filter(v => v.metodo === "Crédito Cliente" && !v.pagado);
+    document.getElementById("lista-creditos").innerHTML = creditosPendientes.length === 0
+      ? "<p style='color:var(--muted)'>Sin saldos pendientes a crédito.</p>"
+      : creditosPendientes.map(c => `
+        <div class="list-item">
+          <div>
+            <strong>${c.nombre}</strong> (${c.ruc}) · ${c.fecha} · Fact. ${c.nroFactura || "-"}<br/>
+            <span style="color:var(--danger); font-weight:600;">Saldo: ${fmt(c.total)}</span>
+          </div>
+          <button class="btn btn-sm btn-success" onclick="abrirCobroCredito(${c.id})">💵 Cobrar Deuda</button>
+        </div>
+      `).join("");
+
+    const esAdmin = rolActual === "admin";
+    document.getElementById("aviso-rol-historial").textContent = esAdmin
+      ? "Modo Administrador activo: podés anular facturas preimpresas o virtuales manteniendo el correlativo contable en Gs. 0."
+      : "Historial de comprobantes emitidos. Para anular o refacturar errores de facturación, solicitá acceso al Administrador.";
+
+    const metodosOpciones = ["Efectivo", "Tarjeta Débito", "Tarjeta Crédito", "Pago QR", "Transferencia Bancaria", "Crédito Cliente"];
+    document.getElementById("lista-ventas-historial").innerHTML = state.ventas.length === 0
+      ? "<p style='color:var(--muted)'>No hay operaciones registradas.</p>"
+      : [...state.ventas].reverse().map(v => `
+        <div class="list-item ${v.anulada ? "anulada" : ""}">
+          <div>
+            <strong>${v.nombre}</strong> (${v.ruc}) · ${v.fecha}
+            ${v.nroFactura ? `<span class="factura-tag">Fact. ${v.nroFactura} (${v.tipoFactura || "Preimpresa"})</span>` : ""}
+            ${v.nroRecibo ? `<span class="recibo-tag">Rec. ${v.nroRecibo}</span>` : ""}
+            <br/>
+            ${v.anulada
+              ? `<span class="anulada-tag">ANULADA · Gs. 0</span> <span style="font-size:0.8rem; color:#991b1b;">(${v.motivoAnulacion})</span>`
+              : `<span style="color:var(--primary); font-weight:600;">${fmt(v.total)}</span> · <span>${v.metodo}</span>`
+            }
+            ${!v.anulada && v.reemplazaA ? `<span class="audit-tag">Reemplaza Fact. ${v.reemplazaA}</span>` : ""}
+            ${!v.anulada && v.editadoPorAdmin ? '<span class="audit-tag">Corregido por Admin</span>' : ""}
+          </div>
+          <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+            ${v.nroRecibo ? `<button class="btn btn-sm btn-outline" onclick="abrirModalRecibo('${v.nroRecibo}')">🖨️ Recibo</button>` : ""}
+            ${esAdmin && !v.anulada ? `
+              <select style="width:auto; margin:0; padding:5px; font-size:0.8rem;" onchange="cambiarMetodoAdmin(${v.id}, this.value)">
+                ${metodosOpciones.map(m => `<option value="${m}" ${v.metodo === m ? "selected" : ""}>${m}</option>`).join("")}
+              </select>
+              <button class="btn btn-sm btn-danger" onclick="abrirModalAnularFactura(${v.id})">🚫 Anular Factura</button>
+            ` : ""}
+          </div>
+        </div>
+      `).join("");
+
+    if (state.config) {
+      document.getElementById("cfg-salon").value = state.config.salon || "Salón de Belleza";
+      document.getElementById("cfg-next-recibo").value = (Number(state.ultimoRecibo) || 0) + 1;
+      document.getElementById("cfg-next-factura").value = (Number(state.ultimaFactura) || 0) + 1;
+      document.getElementById("cfg-modo").value = state.config.modo || "Preimpresa";
+      document.getElementById("cfg-timbrado").value = state.config.timbrado || "";
+      document.getElementById("cfg-exp").value = state.config.exp || "001-001";
+    }
+  }
+
+  document.querySelectorAll("nav button").forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll("section").forEach(s => s.classList.add("hidden"));
+      document.getElementById("tab-" + btn.dataset.tab).classList.remove("hidden");
+      document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderAll();
+    };
+  });
+
+  renderAll();
+</script>
 </body>
 </html>
